@@ -78,6 +78,8 @@ def party_screen(records, dataset, clear_round):
     st.button('Actualiser la partie')
     phase = p['phase']
     st.caption('Enseignant' if p['actor'] is None else 'Équipe : '+p['actor'])
+    if os.environ.get('TERRA_PUBLIC') == '1' and p['actor'] is None:
+        st.caption('Hébergement gratuit : exportez les résultats à la fin de la partie. La base locale peut être effacée lors d’un redémarrage.')
     board = leaderboard(store, code, dataset, token)
     st.caption(f'Barème : {POINTS_PER_CORRECT} points par bonne réponse, 0 sinon. Aucun bonus de vitesse.')
     if board['revealed']:

@@ -2,6 +2,7 @@ from pathlib import Path
 import hashlib
 import os
 from modules.party_ui import party_screen
+from modules.bundled_data import load_bundled
 from modules.parties import PartyError
 from modules.scoring import points, POINTS_PER_CORRECT
 import folium
@@ -25,15 +26,26 @@ def cached_data(archive):
 def cached_layer(archive, code, entry):
     return load_layer(ROOT, archive, code, entry)
 
-archive = None
+@st.cache_data(show_spinner=False)
+def bundled_archive():
+    return load_bundled(ROOT)
+
+try:
+    archive = bundled_archive()
+except (OSError, ValueError) as exc:
+    st.error(f'Données serveur : {exc}')
+    st.stop()
+if archive is not None:
+    os.environ['TERRA_PUBLIC'] = '1'
+    os.environ['TERRA_ALLOW_DEMO'] = '0'
 server_archive = os.environ.get('TERRA_DATA_ZIP')
-if server_archive:
+if archive is None and server_archive:
     try:
         archive = Path(server_archive).read_bytes()
     except OSError as exc:
         st.error(f'Paquet serveur inaccessible : {exc}')
         st.stop()
-elif not all((ROOT / p).exists() for p in ('data/processed/matrice_filtres_application.csv', 'data/geographic/ensembles_paysagers.geojson.gz', CATALOG, PHOTO_CATALOG)):
+elif archive is None and not all((ROOT / p).exists() for p in ('data/processed/matrice_filtres_application.csv', 'data/geographic/ensembles_paysagers.geojson.gz', CATALOG, PHOTO_CATALOG)):
     if os.environ.get('TERRA_PUBLIC') == '1':
         st.error('Données serveur indisponibles. Contactez l’administrateur.')
         st.stop()

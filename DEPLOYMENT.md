@@ -1,28 +1,8 @@
-# Préparation du déploiement
-## Démonstration privée locale
-Installer Python 3.12, puis pip install -r requirements.txt. Définir TERRA_ALLOW_DEMO=1 dans l'environnement, puis lancer streamlit run app.py. Importer le paquet V4 depuis l'interface (ou décompresser ses données à la racine). Ne pas partager les photographies de démonstration sans autorisation. Le mode collectif nécessite une seule instance et des données identiques dans toutes les sessions.
-
-## Déploiement public : prérequis non satisfaits
-- Quatre photographies distinctes et identifiées par manche ; droits de diffusion documentés.
-- Contrôle des libellés exacts du Canva, non accessibles sous forme de texte.
-- Tests du parcours dans un navigateur et sur plusieurs appareils.
-- Stockage durable des parties sur serveur (SQLite sur volume persistant pour une seule instance ; PostgreSQL pour plusieurs instances).
-- Authentification des enseignants, contrôle d'accès à l'import de données, supervision et protection des données avant ouverture publique.
-- Optimiser et tester les performances lorsque de nombreux calques sont activés.
-
-Ne jamais activer TERRA_ALLOW_DEMO sur un serveur ouvert au public. Aucun fichier photo privé n'est poussé sur GitHub.
-
-## CI
-Le workflow teste la compilation, le moteur de notation et la protection contre les commandes périmées, puis le démarrage Streamlit sans données privées. Les tests avec données restent à lancer avec TERRA_DATA_ZIP pointant vers le V4 : python -m unittest tests.test_interface_data tests.test_thematic_layers tests.test_rounds tests.test_parties tests.test_scoring tests.test_release -v.
-
-## Validation responsive et provisionnement
-Le workflow inclut un parcours réel sur cinq tailles Chromium avec une fixture strictement synthétique, sans photos privées. Exécuter aussi les tests tactiles et de performances avec les données autorisées avant diffusion. Pour éviter tout import côté joueur, placer le paquet autorisé dans un emplacement serveur et définir TERRA_DATA_ZIP sur son chemin, ou décompresser data/ à la racine. Ce fichier doit être fourni au serveur lors du déploiement, jamais téléchargé par chaque élève.
-
-## Paquet de diffusion et contrôle des accès
-La base publique V4 sans les photographies privées doit être transférée au serveur. Deux manches candidates (Aiguebelette, Bourget) de quatre vues distinctes, coordonnées et licences documentées dans assets/photo_candidates.json. Exécuter python -m scripts.prepare_public_data BASE.zip PUBLIC.zip sur une machine connectée. L'outil vérifie les huit coordonnées contre les contours exacts, les licences via l'API Commons, les empreintes des images et le catalogue complet. Il échoue si une vérification échoue ; le fichier n'est pas produit avant validation. Les crédits apparaissent dans la correction. Pour diffusion définir TERRA_PUBLIC=1, TERRA_DATA_ZIP sur PUBLIC.zip et TERRA_TEACHER_SECRET sur un secret fort, et TERRA_PARTIES_DB sur un volume persistant. Aucun import de données côté joueur dans ce mode. Ne pas diffuser le V4 privé. Les vues représentent un ensemble paysager, pas un point GPS unique.
-
-## Hébergement Docker (Render ou autre service compatible)
-Dockerfile et scripts/start_public.sh : démarrage sécurisé, mode public forcé, pas de fichier privé dans l'image, base SQLite sur volume persistant. Configurer TERRA_BASE_ZIP (ou TERRA_DATA_ZIP si le paquet public est déjà construit), TERRA_TEACHER_SECRET et TERRA_PARTIES_DB. Le serveur télécharge les photos libres à la préparation et refuse le démarrage si le catalogue n'est pas complet. Le workflow « Vérification des photographies libres » télécharge les huit fichiers et vérifie les licences ; il produit un ZIP d'images, sans publier les images privées. Pas de création automatique de service payant ni de changement de visibilité du dépôt.
-
-## Déploiement du paquet V5 contrôlé
-Les deux fichiers binaires terra_v5.part1 et terra_v5.part2 doivent être ajoutés à la racine du dépôt privé. Leur concaténation doit reproduire exactement le ZIP V5, SHA-256 05ff8bbda7569cc4dbe9eed7ed5f530ac925c887f5282c50bcfbe9664f99337f. Le Dockerfile contrôle cette empreinte à chaque build et le script de démarrage vérifie le catalogue. Le fichier render.yaml propose une instance unique Standard avec disque persistant, secret enseignant généré par Render et health check. La formule est payante ; vérifier le prix affiché avant de l'approuver. Aucun service n'est créé par le seul commit. La diffusion publique reste soumise à la validation du service effectivement démarré. [Configurer le déploiement](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2FMaxrabemananjara%2Fterra-guesser).
+# Déploiement gratuit de Terra Guesser V5
+Hébergeur retenu : Streamlit Community Cloud. Aucun service Render payant.
+## Données
+Le paquet public V5 (deux manches, 31 calques, 8 photos libres) est chargé automatiquement à partir de terra_v5.part1 et terra_v5.part2 à la racine du dépôt, ou terra_guesser_public_v5.zip. L'empreinte SHA-256 attendue est 05ff8bbda7569cc4dbe9eed7ed5f530ac925c887f5282c50bcfbe9664f99337f. Le mode public et l'interdiction des photos de démonstration sont activés dès le chargement du paquet. Les fichiers doivent être ajoutés au dépôt avant mise en ligne. Ne jamais téléverser le paquet V4 privé.
+## Configuration
+Depuis https://share.streamlit.io/ : Create app, dépôt Maxrabemananjara/terra-guesser, branche main, main file path app.py. Dans Advanced settings / Secrets, définir TERRA_PUBLIC = "1" et TERRA_TEACHER_SECRET = "<secret choisi et gardé privé>". La clé enseignant permet la création de parties collectives. Sans clé le mode solo reste utilisable, mais pas la création collective publique. Ne pas mettre la clé dans GitHub.
+## Limites
+L'instance gratuite peut dormir et redémarrer ; SQLite sur disque local ne garantit pas la conservation permanente des scores. Exporter les résultats CSV après chaque partie. Le test navigateur sur cinq tailles et trois sessions a réussi avec données synthétiques ; vérifier le lien public, la latence, la charge des calques et les parties collectives avec le paquet V5. La conformité exacte aux captures Canva reste à vérifier. L'URL n'est acquise qu'après création et démarrage de l'application. Ne pas promettre une URL avant validation.
