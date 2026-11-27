@@ -55,6 +55,7 @@ def clear_round():
     for theme in catalog.theme_canva.unique():
         st.session_state.pop('observe_' + theme, None)
     st.session_state.pop('terra_zone', None)
+    st.session_state.pop('terra_alternative_code', None)
 
 def restart():
     clear_round()
@@ -194,10 +195,13 @@ with st.container(key='terra_workspace'):
                     st.caption('Ce point ne correspond à aucune zone encore compatible.')
             if not answered and compatible:
                 with st.expander('Sélection alternative par code de zone'):
-                    alternative = st.selectbox('Code de zone', [''] + sorted(compatible), format_func=lambda x: x or 'Choisir une zone')
+                    alternative = st.text_input('Code de zone', max_chars=12, key='terra_alternative_code').strip()
                     if st.button('Retenir le code', disabled=not alternative):
-                        st.session_state['terra_zone'] = alternative
-                        st.rerun()
+                        if alternative not in compatible:
+                            st.error('Ce code ne correspond pas à une zone compatible.')
+                        else:
+                            st.session_state['terra_zone'] = alternative
+                            st.rerun()
             if not compatible:
                 st.warning('Aucune zone restante : retire un critère pour revoir ton hypothèse.')
             if st.session_state.get('terra_zone'):

@@ -42,7 +42,7 @@ def load_layer(root, archive, code, entry):
 
 
 def make_thematic_map(web_geo, compatible, uncertain, selected, layers, center=None, zoom=7):
-    m = folium.Map(location=center or [45.5, 4.7], zoom_start=zoom, tiles='CartoDB positron', prefer_canvas=True)
+    m = folium.Map(location=center or [45.5, 4.7], zoom_start=zoom, tiles='OpenStreetMap', prefer_canvas=True)
     for code, entry, data in sorted(layers, key=lambda item: (0 if item[0].startswith('grand_') else 1 if item[0].startswith('typo_') else 2, item[0])):
         color = entry['color']
         folium.GeoJson(data, name=entry['label'], style_function=lambda f, color=color: {'fillColor': color, 'color': color, 'weight': 0.35, 'fillOpacity': 0.58}, interactive=False).add_to(m)

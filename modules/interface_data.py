@@ -75,7 +75,7 @@ def zones_at_point(geo, latitude, longitude, compatible):
 
 def make_map(web_geo, compatible, uncertain, selected=None, center=None, zoom=7):
     import folium
-    m = folium.Map(location=center or [45.5, 4.7], zoom_start=zoom, tiles='CartoDB positron')
+    m = folium.Map(location=center or [45.5, 4.7], zoom_start=zoom, tiles='OpenStreetMap')
     def style(f):
         code = f['properties']['code_ensem']
         color = '#263D59' if code == selected else '#D1D5DB' if code not in compatible else '#D6B447' if code in uncertain else '#43875D'
