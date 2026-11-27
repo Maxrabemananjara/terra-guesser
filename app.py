@@ -127,7 +127,8 @@ with st.expander('Filtres et calques d’observation', expanded=False):
         st.session_state.pop('terra_zone', None)
     chosen = []
     for theme, rows in catalog.groupby('theme_canva', sort=True):
-        with st.expander(theme, expanded=True):
+        with st.container():
+            st.subheader(theme)
             for category, items in rows.groupby('categorie_canva', sort=True):
                 st.markdown('**' + category + '**')
                 for row in items.itertuples():
@@ -188,17 +189,11 @@ with st.container(key='terra_workspace'):
                 else:
                     st.caption('Ce point ne correspond à aucune zone encore compatible.')
             if not answered and compatible:
-
                 with st.expander('Sélection alternative par code de zone'):
-
                     alternative = st.selectbox('Code de zone', [''] + sorted(compatible), format_func=lambda x: x or 'Choisir une zone')
-
                     if st.button('Retenir le code', disabled=not alternative):
-
                         st.session_state['terra_zone'] = alternative
-
                         st.rerun()
-
             if not compatible:
                 st.warning('Aucune zone restante : retire un critère pour revoir ton hypothèse.')
             if st.session_state.get('terra_zone'):
