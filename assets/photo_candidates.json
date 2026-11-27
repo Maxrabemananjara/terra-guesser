@@ -1,0 +1,93 @@
+{
+  "rounds": [
+    {
+      "id": "public_710",
+      "place": "Lac d’Aiguebelette",
+      "code_ensem": "710",
+      "indices": [
+        "hydrographie",
+        "forets",
+        "prairies"
+      ],
+      "observation": "Étendue lacustre, versants boisés et pâturages observés sur différents points de vue du même ensemble paysager.",
+      "photos": [
+        {
+          "title": "Lac d'Aiguebelette, anse de la Combe et Épine.JPG",
+          "latitude": 45.55909,
+          "longitude": 5.808629,
+          "author": "Florian Pépellin",
+          "license": "CC BY-SA 3.0",
+          "source": "https://commons.wikimedia.org/wiki/File:Lac_d'Aiguebelette%2C_anse_de_la_Combe_et_%C3%89pine.JPG"
+        },
+        {
+          "title": "RNR Lac Aiguebelette Coteau Attignat Oncin.jpg",
+          "latitude": 45.551335,
+          "longitude": 5.784206,
+          "author": "Bruno Cagnon",
+          "license": "CC BY-SA 4.0",
+          "source": "https://commons.wikimedia.org/wiki/File:RNR_Lac_Aiguebelette_Coteau_Attignat_Oncin.jpg"
+        },
+        {
+          "title": "Île nord du lac d'Aiguebelette.JPG",
+          "latitude": 45.550897,
+          "longitude": 5.782559,
+          "author": "Florian Pépellin",
+          "license": "CC BY-SA 3.0",
+          "source": "https://commons.wikimedia.org/wiki/File:%C3%8Ele_nord_du_lac_d'Aiguebelette.JPG"
+        },
+        {
+          "title": "Lac d'Aiguebelette - Vue depuis la rive nord par temps nuageux (août 2025).jpg",
+          "latitude": 45.573529,
+          "longitude": 5.801345,
+          "author": "Sebleouf",
+          "license": "CC BY-SA 4.0",
+          "source": "https://commons.wikimedia.org/wiki/File:Lac_d'Aiguebelette_-_Vue_depuis_la_rive_nord_par_temps_nuageux_(ao%C3%BBt_2025).jpg"
+        }
+      ]
+    },
+    {
+      "id": "public_709",
+      "place": "Lac du Bourget",
+      "code_ensem": "709",
+      "indices": [
+        "hydrographie",
+        "habitat"
+      ],
+      "observation": "Grand lac, reliefs environnants et urbanisation visible depuis plusieurs points de vue du même ensemble paysager.",
+      "photos": [
+        {
+          "title": "View of Lac du Bourget.jpg",
+          "latitude": 45.789444,
+          "longitude": 5.821944,
+          "author": "Antinomist",
+          "license": "CC BY-SA 3.0",
+          "source": "https://commons.wikimedia.org/wiki/File:View_of_Lac_du_Bourget.jpg"
+        },
+        {
+          "title": "Lac du Bourget (Août 2025) - Vue depuis Bourdeau.jpg",
+          "latitude": 45.684261,
+          "longitude": 5.851831,
+          "author": "Mathieu BROSSAIS",
+          "license": "CC BY 4.0",
+          "source": "https://commons.wikimedia.org/wiki/File:Lac_du_Bourget_(Ao%C3%BBt_2025)_-_Vue_depuis_Bourdeau.jpg"
+        },
+        {
+          "title": "Lac du Bourget en direction de Bourdeau (août 2025).JPG",
+          "latitude": 45.667347,
+          "longitude": 5.858111,
+          "author": "Florian Pépellin",
+          "license": "CC BY-SA 4.0",
+          "source": "https://commons.wikimedia.org/wiki/File:Lac_du_Bourget_en_direction_de_Bourdeau_(ao%C3%BBt_2025).JPG"
+        },
+        {
+          "title": "Lac du Bourget - Col du Chat.JPG",
+          "latitude": 45.693194,
+          "longitude": 5.855861,
+          "author": "Florian Pépellin",
+          "license": "CC BY-SA 3.0",
+          "source": "https://commons.wikimedia.org/wiki/File:Lac_du_Bourget_-_Col_du_Chat.JPG"
+        }
+      ]
+    }
+  ]
+}

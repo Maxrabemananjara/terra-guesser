@@ -1,5 +1,6 @@
 """Interface collective, indépendante du mode solo."""
 import os
+import secrets
 from pathlib import Path
 import streamlit as st
 from modules.parties import Store, PartyError
@@ -29,7 +30,13 @@ def party_screen(records, dataset, clear_round):
         mode = st.radio('Accès', ['Créer une partie (enseignant)', 'Rejoindre une partie (équipe)', 'Reprendre une session'])
         try:
             if mode.startswith('Créer'):
-                demo = os.environ.get('TERRA_ALLOW_DEMO') == '1' and st.checkbox('Démonstration privée — droits des photos non confirmés')
+                if os.environ.get('TERRA_PUBLIC') == '1':
+                    teacher_secret = os.environ.get('TERRA_TEACHER_SECRET', '')
+                    supplied = st.text_input('Clé enseignant', type='password')
+                    if not teacher_secret or not secrets.compare_digest(teacher_secret.encode(), supplied.encode()):
+                        st.info('Clé enseignant nécessaire pour créer une partie.')
+                        st.stop()
+                demo = os.environ.get('TERRA_PUBLIC') != '1' and os.environ.get('TERRA_ALLOW_DEMO') == '1' and st.checkbox('Démonstration privée — droits des photos non confirmés')
                 available = eligible_rounds(records, demo)
                 if not available:
                     st.info('Aucune manche de diffusion autorisée.')

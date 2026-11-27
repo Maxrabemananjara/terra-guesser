@@ -34,6 +34,9 @@ if server_archive:
         st.error(f'Paquet serveur inaccessible : {exc}')
         st.stop()
 elif not all((ROOT / p).exists() for p in ('data/processed/matrice_filtres_application.csv', 'data/geographic/ensembles_paysagers.geojson.gz', CATALOG, PHOTO_CATALOG)):
+    if os.environ.get('TERRA_PUBLIC') == '1':
+        st.error('Données serveur indisponibles. Contactez l’administrateur.')
+        st.stop()
     upload = st.file_uploader('Importer le paquet Terra Guesser V4', type=['zip'])
     if upload is None:
         st.info('Le dépôt ne contient pas encore les données. Importe le ZIP V4 pour ouvrir la carte réelle.')
@@ -81,7 +84,7 @@ if collective:
         st.session_state['terra_zone'] = shared['own']['selected']
 elif 'terra_game' not in st.session_state:
     st.subheader('Nouvelle partie')
-    demo = os.environ.get('TERRA_ALLOW_DEMO') == '1' and st.checkbox('Mode démonstration privée : images fournies, droits et identité originale non confirmés')
+    demo = os.environ.get('TERRA_PUBLIC') != '1' and os.environ.get('TERRA_ALLOW_DEMO') == '1' and st.checkbox('Mode démonstration privée : images fournies, droits et identité originale non confirmés')
     available = eligible_rounds(records, demo)
     if not available:
         st.info('Aucune manche de diffusion validée : quatre images distinctes, identité et droits vérifiés sont requis.')
@@ -175,7 +178,8 @@ with st.container(key='terra_workspace'):
                 st.error(f'Impossible de charger un calque : {exc}')
                 st.stop()
             if answered:
-                folium.Marker([record['latitude'], record['longitude']], tooltip='Localisation réelle', icon=folium.Icon(color='red')).add_to(m)
+                for i, photo in enumerate(record['photos'], 1):
+                    folium.Marker([photo.get('latitude',record['latitude']), photo.get('longitude',record['longitude'])], tooltip=f'Point de vue {i}', icon=folium.Icon(color='red')).add_to(m)
             map_height = 650 if st.toggle('Agrandir la carte', value=False, key='terra_large_map') else 440
             result = st_folium(m, key='terra_map_' + record['id'] + ('_answer' if answered else ''), height=map_height, use_container_width=True, returned_objects=['last_clicked'])
             click = result.get('last_clicked')
@@ -222,12 +226,19 @@ if answered:
     st.write('Lieu :', record['place'])
     st.write('Ensemble paysager :', props['nom_ensemb'])
     st.write('Grand paysage :', props['nom_grandp'])
-    st.write('Coordonnées :', record['latitude'], record['longitude'])
+    st.write('Coordonnées du premier point de vue :', record['latitude'], record['longitude'])
     st.write('Observations sur la photo :', record['observation'])
     labels = catalog.set_index('code_filtre').filtre_canva.to_dict()
     st.write('Indices observables et compatibles :', ', '.join(labels[c] for c in record['indices']))
     st.markdown('[Fiche de l’ensemble paysager](' + props['url_fiche'] + ')')
     st.markdown('[Source du point photographique](' + record['source'] + ')')
+    with st.expander('Crédits photographiques et licences'):
+        for i, photo in enumerate(record['photos'], 1):
+            if photo.get('source'):
+                st.write(f"Photo {i} : {photo['author']} — {photo['license']}")
+                st.link_button('Fiche originale', photo['source'])
+                st.link_button('Licence', photo['license_url'])
+                st.caption(photo['modifications'])
     if collective:
         st.info('Attends le lancement de la prochaine manche par l’enseignant, puis actualise la partie.')
     else:
