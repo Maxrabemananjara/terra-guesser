@@ -47,3 +47,49 @@
 [data-testid="stButton"] button[kind="primary"] {background:#684192;color:white;border-radius:12px;font-weight:750;box-shadow:0 3px 0 #422565;}
 [data-testid="stButton"] button[kind="primary"]:disabled {background:#E5DCEB;color:#64586E;box-shadow:none;}
 [data-testid="stRadio"] label {background:#FEDCB5;padding:.5rem .8rem;border-radius:12px;}
+
+/* Cohérence de l'expérience : une marque, des surfaces et une hiérarchie. */
+:root {--terra-violet:#684192;--terra-orange:#FCA845;--terra-peach:#FEDCB5;--terra-ink:#422565;--terra-paper:#FFF9F2;}
+[data-testid="stMainBlockContainer"] {max-width:1500px;padding-top:2rem;}
+.terra-brand {display:flex;align-items:center;justify-content:space-between;gap:1rem;border-radius:16px;background:var(--terra-orange);color:var(--terra-ink);padding:.6rem .95rem;}
+.terra-brand b {font-size:clamp(1.1rem,3vw,1.5rem);letter-spacing:-.035em;}
+.terra-brand span {font-size:.68rem;font-weight:800;letter-spacing:.06em;}
+.terra-steps {display:flex;flex-wrap:wrap;gap:.35rem .85rem;background:transparent;padding:.3rem 0;}
+.terra-steps span {background:var(--terra-peach);border-radius:99px;padding:.2rem .6rem;}
+.terra-banner {box-shadow:0 4px 0 var(--terra-violet);}
+.terra-mode-grid {display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+.terra-mode-grid > div {display:flex;flex-direction:column;gap:.25rem;background:white;border:1px solid #E7C9F1;border-radius:16px;padding:1rem;}
+.terra-mode-grid strong {font-size:1.1rem;color:var(--terra-violet);}
+.terra-mode-grid small {color:#5B476E;}
+.terra-round {display:flex;justify-content:space-between;align-items:center;gap:.8rem;}
+.terra-score {flex-shrink:0;background:var(--terra-orange);color:var(--terra-ink);border-radius:99px;padding:.4rem .75rem;}
+.terra-step {border:0;border-radius:99px;display:inline-block;padding:.35rem .75rem;margin:0;}
+.st-key-terra_workspace > [data-testid="stVerticalBlock"] {gap:1rem;}
+.st-key-terra_map {background:white;border:1px solid #DECBE8;padding:clamp(.65rem,1.5vw,1rem);box-shadow:0 3px 0 #68419212;}
+.st-key-terra_photo_grid img {border:0;aspect-ratio:3/2;object-fit:contain!important;}
+.st-key-terra_photo_grid [data-testid="stImage"] {background:#FFF1E2;border-radius:12px;padding:.2rem;}
+.st-key-terra_photo_grid [data-testid="stImageCaption"] {font-size:.7rem;}
+.st-key-terra_metrics [data-testid="stMetric"] {padding:.5rem .55rem;min-height:75px;box-shadow:none;border:0;border-radius:10px;}
+.st-key-terra_metrics [data-testid="stMetricValue"] {font-size:clamp(1.45rem,3vw,2.2rem)!important;}
+.st-key-terra_metrics [data-testid="stMetricLabel"] p {font-size:.76rem;font-weight:700;}
+.terra-chips {display:flex;flex-wrap:wrap;gap:.4rem;}
+.terra-chips span {display:flex;align-items:center;gap:.3rem;border:1px solid #E9D7EC;background:#FFF7FA;border-radius:99px;padding:.25rem .55rem;font-size:.75rem;}
+.terra-chips i {width:.7rem;height:.7rem;display:inline-block;border-radius:50%;flex-shrink:0;}
+.terra-legend {border-top:1px solid #EFE4F2;padding-top:.6rem;}
+.terra-reveal-title {font-size:clamp(1.4rem,4vw,2.1rem);color:var(--terra-violet);font-weight:850;line-height:1.2;}
+.st-key-terra_reveal,.st-key-terra_finish {background:#FFF2DC;border-radius:18px;}
+.st-key-terra_home [data-testid="stRadio"] label {padding:.6rem .85rem;}
+[data-testid="stRadio"] label {background:transparent;padding:.3rem .5rem;}
+[data-testid="stExpander"] {border-color:#E2CFEA;background:#FFFDFA;}
+[data-testid="stButton"] button {font-weight:650;border-radius:12px;}
+@media (max-width:600px) {
+  [data-testid="stMainBlockContainer"] {padding-top:1.25rem;}
+  .terra-mode-grid {gap:.5rem;}
+  .terra-mode-grid > div {padding:.75rem;}
+  .st-key-terra_metrics [data-testid="stHorizontalBlock"] {flex-wrap:nowrap!important;gap:.3rem!important;}
+  .st-key-terra_metrics [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {width:calc((100% - .6rem)/3)!important;flex:1 1 0!important;min-width:0!important;}
+  .st-key-terra_metrics [data-testid="stMetric"] {padding:.35rem;}
+  .st-key-terra_metrics [data-testid="stMetricLabel"] p {font-size:.68rem;}
+}
+.st-key-terra_party_code {background:#FEDCB5;border-radius:16px;}
+[class*="st-key-terra_rank_"] {background:#FFF2DC;border-radius:14px;}

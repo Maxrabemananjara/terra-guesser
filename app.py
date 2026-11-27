@@ -1,6 +1,7 @@
 from pathlib import Path
 import hashlib
 import os
+from html import escape
 from modules.party_ui import party_screen
 from modules.bundled_data import load_bundled
 from modules.parties import PartyError
@@ -14,8 +15,9 @@ from modules.rounds import CATALOG as PHOTO_CATALOG, read_member, load_rounds, e
 
 st.set_page_config(page_title='Terra Guesser', page_icon='🌍', layout='wide', initial_sidebar_state='collapsed')
 ROOT = Path(__file__).resolve().parent
-st.markdown('<style>' + (ROOT / 'assets/mobile.css').read_text(encoding='utf-8') + '</style><div class="terra-banner"><div class="terra-kicker">DÉFIS DATABLE · ÉQUIPE MEE</div><h1>🌍 Terra Guesser</h1><p>À toi de découvrir le paysage mystère !</p><div class="terra-steps">① Observer &nbsp; ② Récolter &nbsp; ③ Superposer &nbsp; ④ Interpréter &nbsp; ⑤ Restituer</div></div>', unsafe_allow_html=True)
-st.caption('Une enquête géographique à partir des données publiques de DatARA.')
+st.markdown('<style>' + (ROOT / 'assets/mobile.css').read_text(encoding='utf-8') + '</style>', unsafe_allow_html=True)
+in_game = 'terra_game' in st.session_state or 'terra_party' in st.session_state
+st.markdown('<div class="terra-brand"><b>🌍 Terra Guesser</b><span>DATABLE · MEE</span></div>' if in_game else '<div class="terra-banner"><div class="terra-kicker">DÉFIS DATABLE · ÉQUIPE MEE</div><h1>🌍 Terra Guesser</h1><p>À toi de découvrir le paysage mystère !</p><div class="terra-steps"><span>① Observer</span><span>② Récolter</span><span>③ Superposer</span><span>④ Interpréter</span><span>⑤ Restituer</span></div></div>', unsafe_allow_html=True)
 
 @st.cache_data(show_spinner='Chargement des données vérifiées…')
 def cached_data(archive):
@@ -68,6 +70,7 @@ def clear_round():
         st.session_state.pop('observe_' + theme, None)
     st.session_state.pop('terra_zone', None)
     st.session_state.pop('terra_alternative_code', None)
+    st.session_state.pop('terra_show_chosen', None)
 
 def restart():
     clear_round()
@@ -87,8 +90,13 @@ by_id = {r['id']: r for r in records}
 zone_props = {str(f['properties']['code_ensem']): f['properties'] for f in geo['features']}
 collective = 'terra_party' in st.session_state
 if not collective and 'terra_game' not in st.session_state:
-    st.markdown('<div class="terra-intro"><b>🔎 Ta mission</b><p>Observe quatre photos, choisis les indices du paysage et retrouve le territoire mystère sur la carte. Chaque bonne réponse vaut 100 points.</p></div>', unsafe_allow_html=True)
-    collective = st.radio('Mode de jeu', ['Collectif', 'Individuel'], horizontal=True) == 'Collectif'
+    with st.container(key='terra_home'):
+        st.markdown('<div class="terra-intro"><b>Ta mission, si tu l’acceptes…</b><p>Quatre photos, des indices et une carte. Réduis les possibilités et retrouve le territoire mystère.</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="terra-mode-grid"><div><strong>🧭 Solo</strong><small>Explore à ton rythme.</small></div><div><strong>🤝 En équipe</strong><small>Défie les autres explorateurs.</small></div></div>', unsafe_allow_html=True)
+        collective = st.radio('Mode de jeu', ['Individuel', 'Collectif'], horizontal=True) == 'Collectif'
+        with st.expander('Comment jouer ?'):
+            st.markdown('**1.** Observe les photos.  **2.** Choisis tes indices.  **3.** Superpose les calques.  **4.** Sélectionne un territoire.  **5.** Valide et découvre la correction.')
+            st.caption('100 points par bonne réponse. Pas de bonus de vitesse.')
 if collective:
     store, shared, token = party_screen(records, dataset_id, clear_round)
     record = by_id[shared['order'][shared['index']]]
@@ -112,25 +120,30 @@ elif 'terra_game' not in st.session_state:
 if not collective:
     game = st.session_state['terra_game']
 if not collective and game['index'] >= len(game['order']):
-    st.header('Partie terminée')
-    st.metric('Bonnes réponses', f"{sum(a['correct'] for a in game['answers'])} / {len(game['order'])}")
-    st.metric('Score total', f"{sum(points(a['correct']) for a in game['answers'])} / {len(game['order'])*POINTS_PER_CORRECT} points")
-    for answer in game['answers']:
-        st.write(by_id[answer['id']]['place'], '—', 'Correct' if answer['correct'] else 'Incorrect')
-    st.button('Nouvelle partie', on_click=restart)
+    with st.container(key='terra_finish', border=True):
+        st.markdown('<div class="terra-step">🏆 BILAN DE TON EXPÉDITION</div>', unsafe_allow_html=True)
+        st.header('Partie terminée')
+        c1, c2 = st.columns(2)
+        c1.metric('Bonnes réponses', f"{sum(a['correct'] for a in game['answers'])} / {len(game['order'])}")
+        c2.metric('Score total', f"{sum(points(a['correct']) for a in game['answers'])} / {len(game['order'])*POINTS_PER_CORRECT} points")
+        for answer in game['answers']:
+            st.write(('✓ ' if answer['correct'] else '✗ ') + by_id[answer['id']]['place'])
+        st.button('Nouvelle partie', on_click=restart, type='primary', use_container_width=True)
     st.stop()
 if not collective:
     record = by_id[game['order'][game['index']]]
     answered = len(game['answers']) > game['index']
-st.markdown(f'<div class="terra-round">🧭 MISSION {game["index"] + 1} / {len(game["order"])} <span>Retrouve le paysage mystère</span></div>', unsafe_allow_html=True)
+current_score = sum(points(x['correct']) for x in game['answers']) if not collective else None
+score_html = f'<div class="terra-score">★ {current_score} pts</div>' if current_score is not None else ''
+st.markdown(f'<div class="terra-round"><div>MISSION {game["index"] + 1} / {len(game["order"])} <span>Retrouve le paysage mystère</span></div>{score_html}</div>', unsafe_allow_html=True)
+st.progress((game['index'] + int(answered))/len(game['order']), text='Progression des missions')
 if not collective:
     st.button('Quitter la partie', on_click=restart)
 if len(record['photos']) < 4:
     st.caption(f"Démonstration privée : {len(record['photos'])}/4 photos disponibles pour ce lieu.")
 
-metrics_slot = st.container(key='terra_metrics')
 with st.container(key='terra_workspace'):
-    left, right = st.columns([1,2])
+    left, right = st.columns([1,1.5], gap='medium')
     with left:
         st.markdown('<div class="terra-step">01 · OBSERVER</div>', unsafe_allow_html=True)
         st.subheader('Observer le paysage')
@@ -171,34 +184,34 @@ with st.container(key='terra_workspace'):
             for theme, rows in catalog.groupby('theme_canva', sort=True):
                 codes = rows.code_filtre.tolist()
                 observed.extend(st.multiselect(theme, codes, format_func=lambda c: layers_catalog[c]['label'], key='observe_' + theme, disabled=answered))
-            if chosen and not answered and st.toggle('Afficher aussi les calques des indices sélectionnés', value=True, key='terra_show_chosen'):
+            if chosen and not answered and st.toggle('Afficher aussi les calques des indices sélectionnés', value=False, key='terra_show_chosen'):
                 observed = list(dict.fromkeys(chosen + observed))
 
-        st.subheader('Indices sélectionnés')
-        for item in catalog[catalog.code_filtre.isin(chosen)].itertuples():
-            st.markdown(f'<span style="color:{item.couleur_hex}">●</span> {item.filtre_canva}', unsafe_allow_html=True)
-        if not chosen:
-            st.caption('Aucun filtre actif.')
+        st.markdown('**Carnet d’indices**')
+        if chosen:
+            chips = ''.join(f'<span><i style="background:{escape(str(item.couleur_hex), quote=True)}"></i>{escape(str(item.filtre_canva))}</span>' for item in catalog[catalog.code_filtre.isin(chosen)].itertuples())
+            st.markdown('<div class="terra-chips">'+chips+'</div>', unsafe_allow_html=True)
+        else:
+            st.caption('Aucun indice sélectionné. Commence ton enquête !')
     compatible, uncertain = filter_zones(matrix, chosen)
-    with metrics_slot:
-        a,b,c = st.columns(3)
-        a.metric('🌍 Territoires possibles', len(compatible))
-        b.metric('✖ Éliminés', 115-len(compatible))
-        c.metric('❓ Incertains', len(uncertain))
     with right:
         with st.container(key='terra_map'):
             st.markdown('<div class="terra-step">03 · SUPERPOSER &nbsp; 04 · INTERPRÉTER</div>', unsafe_allow_html=True)
             st.subheader('Explorer la carte')
+            with st.container(key='terra_metrics'):
+                c1,c2,c3 = st.columns(3)
+                c1.metric('Possibles', len(compatible))
+                c2.metric('Éliminés', 115-len(compatible))
+                c3.metric('Incertains', len(uncertain))
             st.markdown('<div class="terra-legend"><span><i style="background:#684192"></i>Possible</span><span><i style="background:#FCA845"></i>Incertain</span><span><i style="background:#D47EB3;border:2px solid #684192"></i>Ta réponse</span><span><i style="background:#C3CE6C;border:2px solid #477522"></i>Bonne réponse</span></div>', unsafe_allow_html=True)
-            st.caption('Touche un territoire sur la carte pour le sélectionner. Zoome ou déplace la carte librement.')
-            st.caption('Les territoires éliminés ne sont plus dessinés. La carte se recentre sur les territoires restants.')
+            st.caption('Les zones éliminées disparaissent. Touche une zone restante pour la retenir.')
             if chosen and not answered:
                 st.progress((115-len(compatible))/115, text=f"Enquête : {115-len(compatible)} territoires éliminés sur 115")
             if len(compatible) == 1 and not answered:
                 st.success('Un seul territoire reste possible ! Examine-le avant de répondre.')
-            for code in observed:
-                entry = layers_catalog[code]
-                st.markdown(f'<span style="color:{entry["color"]}">●</span> {entry["label"]}', unsafe_allow_html=True)
+            if observed and not answered:
+                layer_chips = ''.join(f'<span><i style="background:{escape(str(layers_catalog[c]["color"]), quote=True)}"></i>{escape(str(layers_catalog[c]["label"]))}</span>' for c in observed)
+                st.markdown('<div class="terra-chips">'+layer_chips+'</div>', unsafe_allow_html=True)
             if not answered and st.session_state.get('terra_zone') not in compatible:
                 st.session_state.pop('terra_zone', None)
             try:
@@ -210,7 +223,7 @@ with st.container(key='terra_workspace'):
             if answered:
                 for i, photo in enumerate(record['photos'], 1):
                     folium.Marker([photo.get('latitude',record['latitude']), photo.get('longitude',record['longitude'])], tooltip=f'Point de vue {i}', icon=folium.Icon(color='red')).add_to(m)
-            map_height = 650 if st.toggle('Agrandir la carte', value=False, key='terra_large_map') else 440
+            map_height = 650 if st.toggle('Agrandir la carte', value=False, key='terra_large_map') else 480
             view_id = hashlib.sha256(repr((sorted(chosen), sorted(observed), st.session_state.get('terra_zone'), answered)).encode()).hexdigest()[:12]
             result = st_folium(m, key='terra_map_' + record['id'] + '_' + view_id, height=map_height, use_container_width=True, returned_objects=['last_clicked'])
             click = result.get('last_clicked')
@@ -240,7 +253,8 @@ with st.container(key='terra_workspace'):
                 st.warning('Aucune zone restante : retire un critère pour revoir ton hypothèse.')
             if st.session_state.get('terra_zone'):
                 st.success('Zone retenue : ' + st.session_state['terra_zone'])
-            st.caption('Contours simplifiés uniquement pour l’affichage ; sélection calculée sur les contours originaux.')
+            with st.expander('À propos de la carte'):
+                st.caption('Contours simplifiés uniquement pour l’affichage ; sélection calculée sur les contours originaux. Données DatARA et CORINE Land Cover.')
 if not answered:
     st.markdown('<div class="terra-step">05 · RESTITUER</div>', unsafe_allow_html=True)
     if not st.session_state.get('terra_zone') in compatible:
@@ -260,20 +274,25 @@ if answered:
     props = zone_props[record['code_ensem']]
     st.markdown('<div class="terra-step">🏆 MISSION TERMINÉE</div>', unsafe_allow_html=True)
     st.header('Correction géographique')
-    st.metric('Points de la manche', points(answer['correct']))
+    with st.container(key='terra_reveal', border=True):
+        st.markdown(f'<div class="terra-reveal-title">{escape(str(record["place"]))}</div>', unsafe_allow_html=True)
+        c1,c2 = st.columns(2)
+        c1.metric('Points de la manche', points(answer['correct']))
+        c2.markdown('**Ensemble paysager**')
+        c2.write(props['nom_ensemb'])
     if answer['correct']:
         st.success('Bonne réponse !')
     else:
         st.error('Ce n’est pas le bon ensemble paysager.')
-    st.write('Lieu :', record['place'])
-    st.write('Ensemble paysager :', props['nom_ensemb'])
-    st.write('Grand paysage :', props['nom_grandp'])
-    st.write('Coordonnées du premier point de vue :', record['latitude'], record['longitude'])
-    st.write('Observations sur la photo :', record['observation'])
+    st.write('**Grand paysage :**', props['nom_grandp'])
+    st.markdown('**Ce que les photos nous apprennent**')
+    st.write(record['observation'])
     labels = catalog.set_index('code_filtre').filtre_canva.to_dict()
     st.write('Indices observables et compatibles :', ', '.join(labels[c] for c in record['indices']))
-    st.markdown('[Fiche de l’ensemble paysager](' + props['url_fiche'] + ')')
-    st.markdown('[Source du point photographique](' + record['source'] + ')')
+    with st.expander('Informations géographiques et sources'):
+        st.write('Coordonnées du premier point de vue :', record['latitude'], record['longitude'])
+        st.markdown('[Fiche de l’ensemble paysager](' + props['url_fiche'] + ')')
+        st.markdown('[Source du point photographique](' + record['source'] + ')')
     with st.expander('Crédits photographiques et licences'):
         for i, photo in enumerate(record['photos'], 1):
             if photo.get('source'):

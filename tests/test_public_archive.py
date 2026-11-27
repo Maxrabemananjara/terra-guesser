@@ -58,7 +58,8 @@ class PublicArchiveTests(unittest.TestCase):
         boundary=unary_union([shape(f['geometry']) for f in visible_zones(web,remaining)['features']])
         layers=[child for child in m._children.values() if child.__class__.__name__=='GeoJson']
         self.assertEqual({f['properties']['code_ensem'] for f in layers[-1].data['features']},remaining)
+        buffered_boundary=boundary.buffer(1e-8)
         for layer in layers[:-1]:
             for feature in layer.data['features']:
-                self.assertTrue(boundary.buffer(1e-8).covers(shape(feature['geometry'])))
+                self.assertTrue(buffered_boundary.covers(shape(feature['geometry'])))
         self.assertTrue(any(child.__class__.__name__=='FitBounds' for child in m._children.values()))

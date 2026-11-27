@@ -47,6 +47,10 @@ class ResponsiveTests(unittest.TestCase):
                         self.assertLessEqual(page.evaluate('document.documentElement.scrollWidth'),width+1)
                         page.get_by_text('Filtres et calques d’observation',exact=True).click()
                         expect(page.get_by_text('filtre_00',exact=True).first).to_be_visible()
+                        page.get_by_role('checkbox',name='filtre_00',exact=True).check()
+                        expect(page.locator('.st-key-terra_metrics').get_by_text('58',exact=True)).to_be_visible(timeout=30000)
+                        expect(page.locator('.st-key-terra_metrics').get_by_text('57',exact=True)).to_be_visible(timeout=30000)
+                        page.get_by_text('Filtres et calques d’observation',exact=True).click()
                         page.get_by_text('Sélection alternative par code de zone',exact=True).click()
                         page.get_by_role('textbox',name='Code de zone').fill('100')
                         page.get_by_role('textbox',name='Code de zone').press('Tab')
@@ -68,12 +72,14 @@ class ResponsiveTests(unittest.TestCase):
             teacher,one,two=[c.new_page() for c in contexts]
             try:
                 teacher.goto('http://localhost:8765')
+                teacher.get_by_text('Collectif',exact=True).click(timeout=30000)
                 teacher.get_by_role('button',name='Créer la partie').click(timeout=30000)
                 code_text=teacher.get_by_text(re.compile(r'Code de participation : [A-Z2-9]{6}'))
                 expect(code_text).to_be_visible(timeout=30000)
                 code=re.search(r'[A-Z2-9]{6}$',code_text.inner_text().strip()).group()
                 for page,name in ((one,'Alpha'),(two,'Beta')):
                     page.goto('http://localhost:8765')
+                    page.get_by_text('Collectif',exact=True).click(timeout=30000)
                     page.get_by_text('Rejoindre une partie (équipe)',exact=True).click(timeout=30000)
                     page.get_by_role('textbox',name='Code de participation').fill(code)
                     page.get_by_role('textbox',name='Nom de l’équipe (sans nom d’élève)').fill(name)

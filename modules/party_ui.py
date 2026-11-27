@@ -26,7 +26,9 @@ def party_screen(records, dataset, clear_round):
         st.session_state['terra_party'] = (code, token)
         st.rerun()
     if 'terra_party' not in st.session_state:
+        st.markdown('<div class="terra-step">🤝 DÉFI EN ÉQUIPE</div>', unsafe_allow_html=True)
         st.subheader('Partie collective')
+        st.caption('Crée une mission ou rejoins ton équipe avec un code.')
         mode = st.radio('Accès', ['Créer une partie (enseignant)', 'Rejoindre une partie (équipe)', 'Reprendre une session'])
         try:
             if mode.startswith('Créer'):
@@ -69,7 +71,9 @@ def party_screen(records, dataset, clear_round):
         st.error(str(exc))
         st.button('Retour', on_click=leave)
         st.stop()
-    st.write(f'Code de participation : {code}')
+    with st.container(key='terra_party_code', border=True):
+        st.markdown('<div class="terra-step">CODE DE LA MISSION</div>', unsafe_allow_html=True)
+        st.write(f'Code de participation : {code}')
     if p['metadata']:
         st.caption(' · '.join(p['metadata'].get(k,'') for k in ('school','level','class_label') if p['metadata'].get(k)))
     with st.expander('Clé de reprise (à garder privée)'):
@@ -85,9 +89,11 @@ def party_screen(records, dataset, clear_round):
     if board['revealed']:
         st.subheader('Classement final' if board['finished'] else 'Classement provisoire')
         for r in board['rows']:
-            with st.container(border=True):
-                st.write(f"#{r['rank']} — {r['name']}")
-                st.caption(f"{r['correct']} bonne(s) réponse(s) · {r['points']} points")
+            with st.container(key=f'terra_rank_{r["rank"]}_{len(board["rows"])}_{board["rows"].index(r)}', border=True):
+                name_col, score_col = st.columns([2,1])
+                name_col.write(f"#{r['rank']} — {r['name']}")
+                name_col.caption(f"{r['correct']} bonne(s) réponse(s)")
+                score_col.metric('Points', r['points'])
         if board['finished']:
             champions = winners(board)
             st.success(('Équipe gagnante : ' if len(champions)==1 else 'Équipes gagnantes ex æquo : ') + ', '.join(champions))
