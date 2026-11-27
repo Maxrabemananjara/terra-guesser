@@ -1,5 +1,7 @@
 from pathlib import Path
 import hashlib
+from modules.party_ui import party_screen
+from modules.parties import PartyError
 import folium
 import streamlit as st
 from streamlit_folium import st_folium
@@ -49,18 +51,30 @@ def clear_round():
 def restart():
     clear_round()
     st.session_state.pop('terra_game', None)
+    st.session_state.pop('terra_party', None)
+    st.session_state.pop('terra_party_round', None)
 
 def next_round():
     advance(st.session_state['terra_game'])
     clear_round()
 
-dataset_id = hashlib.sha256(archive if archive is not None else read_member(ROOT, None, PHOTO_CATALOG)).hexdigest()
+dataset_id = hashlib.sha256(b''.join(hashlib.sha256(read_member(ROOT, archive, path)).digest() for path in ('data/processed/matrice_filtres_application.csv','data/geographic/ensembles_paysagers.geojson.gz',CATALOG,PHOTO_CATALOG))).hexdigest()
 if st.session_state.get('terra_dataset') != dataset_id:
     restart()
     st.session_state['terra_dataset'] = dataset_id
 by_id = {r['id']: r for r in records}
 zone_props = {str(f['properties']['code_ensem']): f['properties'] for f in geo['features']}
-if 'terra_game' not in st.session_state:
+collective = 'terra_party' in st.session_state
+if not collective and 'terra_game' not in st.session_state:
+    collective = st.radio('Mode de jeu', ['Collectif', 'Individuel'], horizontal=True) == 'Collectif'
+if collective:
+    store, shared, token = party_screen(records, dataset_id, clear_round)
+    record = by_id[shared['order'][shared['index']]]
+    answered = shared['phase'] == 'revealed'
+    game = shared
+    if answered and shared['own']:
+        st.session_state['terra_zone'] = shared['own']['selected']
+elif 'terra_game' not in st.session_state:
     st.subheader('Nouvelle partie')
     demo = st.checkbox('Mode démonstration privée : images fournies, droits et identité originale non confirmés')
     available = eligible_rounds(records, demo)
@@ -73,18 +87,21 @@ if 'terra_game' not in st.session_state:
         st.rerun()
     st.stop()
 
-game = st.session_state['terra_game']
-if game['index'] >= len(game['order']):
+if not collective:
+    game = st.session_state['terra_game']
+if not collective and game['index'] >= len(game['order']):
     st.header('Partie terminée')
     st.metric('Bonnes réponses', f"{sum(a['correct'] for a in game['answers'])} / {len(game['order'])}")
     for answer in game['answers']:
         st.write(by_id[answer['id']]['place'], '—', 'Correct' if answer['correct'] else 'Incorrect')
     st.button('Nouvelle partie', on_click=restart)
     st.stop()
-record = by_id[game['order'][game['index']]]
-answered = len(game['answers']) > game['index']
+if not collective:
+    record = by_id[game['order'][game['index']]]
+    answered = len(game['answers']) > game['index']
 st.subheader(f"Manche {game['index'] + 1} / {len(game['order'])}")
-st.button('Quitter la partie', on_click=restart)
+if not collective:
+    st.button('Quitter la partie', on_click=restart)
 if len(record['photos']) < 4:
     st.caption(f"Démonstration privée : {len(record['photos'])}/4 photos disponibles pour ce lieu.")
 
@@ -166,11 +183,17 @@ with right:
     st.caption('Contours simplifiés uniquement pour l’affichage ; sélection calculée sur les contours originaux.')
 if not answered and st.session_state.get('terra_zone') in compatible:
     if st.button('Valider ma réponse', type='primary'):
-        submit_answer(game, record, st.session_state['terra_zone'], compatible)
-        st.rerun()
+        try:
+            if collective:
+                store.submit(shared['code'], dataset_id, token, record['id'], st.session_state['terra_zone'], by_id, compatible)
+            else:
+                submit_answer(game, record, st.session_state['terra_zone'], compatible)
+            st.rerun()
+        except PartyError as exc:
+            st.error(str(exc))
 
 if answered:
-    answer = game['answers'][game['index']]
+    answer = shared['own'] if collective else game['answers'][game['index']]
     props = zone_props[record['code_ensem']]
     st.header('Correction géographique')
     if answer['correct']:
@@ -186,5 +209,8 @@ if answered:
     st.write('Indices observables et compatibles :', ', '.join(labels[c] for c in record['indices']))
     st.markdown('[Fiche de l’ensemble paysager](' + props['url_fiche'] + ')')
     st.markdown('[Source du point photographique](' + record['source'] + ')')
-    st.button('Manche suivante' if game['index']+1 < len(game['order']) else 'Voir les résultats', on_click=next_round, type='primary')
-st.caption('Sources : DatARA / DREAL Auvergne-Rhône-Alpes · CORINE Land Cover 2018. Les équipes et le classement partagé seront ajoutés ultérieurement.')
+    if collective:
+        st.info('Attends le lancement de la prochaine manche par l’enseignant, puis actualise la partie.')
+    else:
+        st.button('Manche suivante' if game['index']+1 < len(game['order']) else 'Voir les résultats', on_click=next_round, type='primary')
+st.caption('Sources : DatARA / DREAL Auvergne-Rhône-Alpes · CORINE Land Cover 2018. Le classement partagé sera ajouté ultérieurement.')
