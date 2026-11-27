@@ -93,10 +93,11 @@ def make_thematic_map(web_geo, compatible, uncertain, selected, layers, center=N
         chosen = code == selected
         correct = answer is not None and code == str(answer)
         unsure = code in uncertain and answer is None
-        color = '#009E73' if correct else '#D63384' if chosen else '#F59E0B' if unsure else '#007FBE'
-        return {'fillColor': color, 'color': color, 'weight': 4 if chosen or correct else 2.3,
+        color = '#477522' if correct else '#684192' if chosen else '#B35B00' if unsure else '#684192'
+        fill = '#C3CE6C' if correct else '#D47EB3' if chosen else '#FCA845' if unsure else '#684192'
+        return {'fillColor': fill, 'color': color, 'weight': 4 if chosen or correct else 2.3,
                 'dashArray': '6 4' if unsure else None,
-                'fillOpacity': 0.62 if chosen or correct else 0.12 if layers else 0.52}
+                'fillOpacity': 0.78 if chosen or correct else 0.10 if layers else 0.45}
     if visible['features']:
         folium.GeoJson(visible, name='Territoires restants', control=False, style_function=style,
                        highlight_function=lambda f: {'weight': 4, 'fillOpacity': 0.7},

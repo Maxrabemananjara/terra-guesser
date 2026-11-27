@@ -41,3 +41,24 @@ class PublicArchiveTests(unittest.TestCase):
         layers=[child for child in m._children.values() if child.__class__.__name__=='GeoJson']
         self.assertEqual(len(layers),1)
         self.assertEqual([f['properties']['code_ensem'] for f in layers[0].data['features']],[ids[0]])
+
+    def test_real_overlay_is_restricted_to_remaining_territory(self):
+        from shapely.geometry import shape
+        from shapely.ops import unary_union
+        root=Path(__file__).resolve().parents[1]
+        archive=load_bundled(root)
+        matrix,geo=load_data(root,archive)
+        web=web_geometry(geo)
+        catalog=load_catalog(root,archive,matrix)
+        candidates=[(code,filter_zones(matrix,[code])) for code in catalog]
+        code,(remaining,uncertain)=next((c,r) for c,r in candidates if 0<len(r[0])<115)
+        entry=catalog[code]
+        data=load_layer(root,archive,code,entry)
+        m=make_thematic_map(web,remaining,uncertain,None,[(code,entry,data)])
+        boundary=unary_union([shape(f['geometry']) for f in visible_zones(web,remaining)['features']])
+        layers=[child for child in m._children.values() if child.__class__.__name__=='GeoJson']
+        self.assertEqual({f['properties']['code_ensem'] for f in layers[-1].data['features']},remaining)
+        for layer in layers[:-1]:
+            for feature in layer.data['features']:
+                self.assertTrue(boundary.buffer(1e-8).covers(shape(feature['geometry'])))
+        self.assertTrue(any(child.__class__.__name__=='FitBounds' for child in m._children.values()))

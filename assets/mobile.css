@@ -23,13 +23,27 @@
   [data-testid="stCheckbox"] label, [data-testid="stRadio"] label {min-height:44px;align-items:center;}
 }
 
-/* Direction carnet d'exploration : couleurs franches, carte et étapes lisibles. */
-.terra-banner {background:linear-gradient(120deg,#075985,#0E7490 55%,#059669);color:white;border-radius:22px;padding:1.25rem 1.4rem;box-shadow:0 5px 18px #07598530;}
-.terra-banner h1 {color:#FFF7D6;font-weight:850;letter-spacing:-.04em;}
-.st-key-terra_photo_grid img {border-radius:12px;border:2px solid #0EA5E9;}
-.st-key-terra_metrics [data-testid="stMetric"] {background:#E0F2FE;border:1px solid #7DD3FC;border-radius:14px;padding:.7rem;}
-.st-key-terra_metrics [data-testid="stColumn"]:nth-child(2) [data-testid="stMetric"] {background:#FFE4E6;border-color:#FDA4AF;}
-.st-key-terra_metrics [data-testid="stColumn"]:nth-child(3) [data-testid="stMetric"] {background:#FEF3C7;border-color:#FBBF24;}
-.st-key-terra_map {border:2px solid #0EA5E9;border-radius:18px;padding:.65rem;background:#F0F9FF;}
-[data-testid="stExpander"] {border-radius:14px;border-color:#7DD3FC;}
-[data-testid="stButton"] button[kind="primary"] {background:#0B7285;color:white;border-radius:12px;font-weight:700;}
+
+/* DATABLE: couleurs extraites de la présentation Canva Terra Guesser. */
+.terra-banner {background:#FCA845;color:#422565;border-radius:24px;padding:clamp(1rem,3vw,2rem);box-shadow:0 5px 0 #684192;margin:0 0 1rem;}
+.terra-banner h1 {color:#684192;font-weight:850;font-size:clamp(2rem,5vw,3.4rem);letter-spacing:-.045em;line-height:1.2;}
+.terra-banner p {font-size:clamp(1rem,2vw,1.25rem);font-weight:700;margin:.25rem 0 .7rem;}
+.terra-kicker {font-size:.72rem;letter-spacing:.12em;font-weight:800;margin-bottom:.4rem;}
+.terra-steps {background:#FEDCB5;border-radius:12px;padding:.6rem .8rem;font-weight:700;font-size:.82rem;line-height:1.8;}
+.terra-intro {background:#FEDCB5;color:#422565;border:2px solid #FCA845;border-radius:18px;padding:1rem;}
+.terra-intro p {margin:.5rem 0 0;}
+.terra-round {background:#684192;color:white;border-radius:12px;font-weight:850;letter-spacing:.04em;padding:.9rem 1rem;}
+.terra-round span {display:block;color:#FEDCB5;font-size:.9rem;font-weight:600;letter-spacing:0;}
+.terra-step {background:#FEDCB5;color:#684192;border-left:5px solid #FCA845;border-radius:8px;padding:.5rem .65rem;font-size:.78rem;font-weight:850;letter-spacing:.045em;margin-top:.5rem;}
+.terra-legend {display:flex;flex-wrap:wrap;gap:.4rem .8rem;font-size:.8rem;font-weight:650;}
+.terra-legend span {display:flex;gap:.35rem;align-items:center;}
+.terra-legend i {display:inline-block;width:14px;height:14px;border-radius:4px;box-sizing:border-box;}
+.st-key-terra_photo_grid img {border-radius:12px;border:2px solid #FCA845;}
+.st-key-terra_metrics [data-testid="stMetric"] {background:#FEDCB5;border:1px solid #FCA845;border-radius:14px;padding:.7rem;color:#422565;}
+.st-key-terra_metrics [data-testid="stColumn"]:nth-child(2) [data-testid="stMetric"] {background:#F4E0EF;border-color:#D47EB3;}
+.st-key-terra_metrics [data-testid="stColumn"]:nth-child(3) [data-testid="stMetric"] {background:#FFF1D8;border-color:#FCA845;}
+.st-key-terra_map {border:2px solid #684192;border-radius:18px;padding:.65rem;background:#FFFAF4;}
+[data-testid="stExpander"] {border-radius:14px;border-color:#D47EB3;}
+[data-testid="stButton"] button[kind="primary"] {background:#684192;color:white;border-radius:12px;font-weight:750;box-shadow:0 3px 0 #422565;}
+[data-testid="stButton"] button[kind="primary"]:disabled {background:#E5DCEB;color:#64586E;box-shadow:none;}
+[data-testid="stRadio"] label {background:#FEDCB5;padding:.5rem .8rem;border-radius:12px;}
