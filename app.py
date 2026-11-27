@@ -1,7 +1,8 @@
 from pathlib import Path
 import streamlit as st
 from streamlit_folium import st_folium
-from modules.interface_data import load_data, filter_zones, web_geometry, zones_at_point, make_map
+from modules.interface_data import load_data, filter_zones, web_geometry, zones_at_point
+from modules.thematic_layers import CATALOG, load_catalog, load_layer, make_thematic_map
 
 st.set_page_config(page_title='Terra Guesser', page_icon='🌍', layout='wide')
 ROOT = Path(__file__).resolve().parent
@@ -15,23 +16,34 @@ st.caption('Défis Datable · Équipe MEE | Prototype de l’interface cartograp
 @st.cache_data(show_spinner='Chargement des données vérifiées…')
 def cached_data(archive):
     matrix, geo = load_data(ROOT, archive)
-    return matrix, geo, web_geometry(geo)
+    return matrix, geo, web_geometry(geo), load_catalog(ROOT, archive, matrix)
+
+@st.cache_data(show_spinner=False, max_entries=8)
+def cached_layer(archive, code, entry):
+    return load_layer(ROOT, archive, code, entry)
 
 archive = None
-if not (ROOT / 'data/processed/matrice_filtres_application.csv').exists() or not (ROOT / 'data/geographic/ensembles_paysagers.geojson.gz').exists():
-    upload = st.file_uploader('Importer le paquet de données Terra Guesser V2', type=['zip'])
+if not all((ROOT / p).exists() for p in ('data/processed/matrice_filtres_application.csv', 'data/geographic/ensembles_paysagers.geojson.gz', CATALOG)):
+    upload = st.file_uploader('Importer le paquet cartographique Terra Guesser V3', type=['zip'])
     if upload is None:
-        st.info('Le dépôt ne contient pas encore les données. Importe le ZIP V2 pour ouvrir la carte réelle.')
+        st.info('Le dépôt ne contient pas encore les données. Importe le ZIP V3 pour ouvrir la carte réelle.')
         st.stop()
     archive = upload.getvalue()
 try:
-    matrix, geo, web_geo = cached_data(archive)
+    matrix, geo, web_geo, layers_catalog = cached_data(archive)
 except Exception as exc:
     st.error(f'Impossible de lire les données : {exc}')
     st.stop()
 
 catalog = matrix[['code_filtre','theme_canva','categorie_canva','filtre_canva','couleur_hex']].drop_duplicates()
 with st.sidebar:
+    st.header('Calques d’observation')
+    st.caption('Afficher une couche ne modifie pas les zones compatibles.')
+    observed = []
+    for theme, rows in catalog.groupby('theme_canva', sort=True):
+        codes = rows.code_filtre.tolist()
+        observed.extend(st.multiselect(theme, codes, format_func=lambda c: layers_catalog[c]['label'], key='observe_' + theme))
+    st.divider()
     st.header('Filtres de déduction')
     st.caption('Les critères sélectionnés se cumulent (ET).')
     if st.button('Réinitialiser les filtres', use_container_width=True):
@@ -49,7 +61,7 @@ with st.sidebar:
 
 compatible, uncertain = filter_zones(matrix, chosen)
 a,b,c = st.columns(3)
-a.metric('Zones compatibles', len(compatible))
+a.metric('Zones encore possibles', len(compatible))
 b.metric('Zones éliminées', 115-len(compatible))
 c.metric('Compatibilité incertaine', len(uncertain))
 left, right = st.columns([1,2])
@@ -67,10 +79,18 @@ with left:
         st.caption('Aucun filtre actif.')
 with right:
     st.subheader('Explorer la carte')
-    st.caption('Vert : compatible · Jaune : incertitude · Gris : éliminé · Bleu foncé : sélection')
+    st.caption('Contours : vert = compatible · ocre pointillé = incertain · gris = éliminé · bleu foncé = sélection')
+    for code in observed:
+        entry = layers_catalog[code]
+        st.markdown(f'<span style="color:{entry["color"]}">●</span> {entry["label"]}', unsafe_allow_html=True)
     if st.session_state.get('terra_zone') not in compatible:
         st.session_state.pop('terra_zone', None)
-    m = make_map(web_geo, compatible, uncertain, st.session_state.get('terra_zone'))
+    try:
+        active_layers = [(code, layers_catalog[code], cached_layer(archive, code, layers_catalog[code])) for code in observed]
+        m = make_thematic_map(web_geo, compatible, uncertain, st.session_state.get('terra_zone'), active_layers)
+    except Exception as exc:
+        st.error(f'Impossible de charger un calque : {exc}')
+        st.stop()
     result = st_folium(m, key='terra_map', height=560, use_container_width=True, returned_objects=['last_clicked'])
     click = result.get('last_clicked')
     if click:
