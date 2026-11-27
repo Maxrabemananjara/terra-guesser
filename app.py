@@ -14,8 +14,8 @@ from modules.rounds import CATALOG as PHOTO_CATALOG, read_member, load_rounds, e
 
 st.set_page_config(page_title='Terra Guesser', page_icon='🌍', layout='wide', initial_sidebar_state='collapsed')
 ROOT = Path(__file__).resolve().parent
-st.markdown('<style>' + (ROOT / 'assets/mobile.css').read_text(encoding='utf-8') + '</style><div class="terra-banner"><h1>Terra Guesser</h1>Observe · Récolte · Superpose · Interprète · Restitue</div>', unsafe_allow_html=True)
-st.caption('Défis Datable · Équipe MEE | Prototype de l’interface cartographique')
+st.markdown('<style>' + (ROOT / 'assets/mobile.css').read_text(encoding='utf-8') + '</style><div class="terra-banner"><h1>Terra Guesser</h1>🧭 Observe · Récolte · Superpose · Interprète · Restitue</div>', unsafe_allow_html=True)
+st.caption('Défis Datable · Équipe MEE | Enquête géographique')
 
 @st.cache_data(show_spinner='Chargement des données vérifiées…')
 def cached_data(archive):
@@ -127,36 +127,7 @@ if not collective:
 if len(record['photos']) < 4:
     st.caption(f"Démonstration privée : {len(record['photos'])}/4 photos disponibles pour ce lieu.")
 
-with st.expander('Filtres et calques d’observation', expanded=False):
-    st.header('Calques d’observation')
-    st.caption('Afficher une couche ne modifie pas les zones compatibles.')
-    observed = []
-    for theme, rows in catalog.groupby('theme_canva', sort=True):
-        codes = rows.code_filtre.tolist()
-        observed.extend(st.multiselect(theme, codes, format_func=lambda c: layers_catalog[c]['label'], key='observe_' + theme))
-    st.divider()
-    st.header('Filtres de déduction')
-    st.caption('Les critères sélectionnés se cumulent (ET).')
-    if st.button('Réinitialiser les filtres', use_container_width=True, disabled=answered):
-        for code in catalog.code_filtre:
-            st.session_state['filter_' + code] = False
-        st.session_state.pop('terra_zone', None)
-    chosen = []
-    for theme, rows in catalog.groupby('theme_canva', sort=True):
-        with st.container():
-            st.subheader(theme)
-            for category, items in rows.groupby('categorie_canva', sort=True):
-                st.markdown('**' + category + '**')
-                for row in items.itertuples():
-                    if st.checkbox(row.filtre_canva, key='filter_' + row.code_filtre, disabled=answered):
-                        chosen.append(row.code_filtre)
-
-compatible, uncertain = filter_zones(matrix, chosen)
-with st.container(key='terra_metrics'):
-    a,b,c = st.columns(3)
-    a.metric('Zones encore possibles', len(compatible))
-    b.metric('Zones éliminées', 115-len(compatible))
-    c.metric('Compatibilité incertaine', len(uncertain))
+metrics_slot = st.container(key='terra_metrics')
 with st.container(key='terra_workspace'):
     left, right = st.columns([1,2])
     with left:
@@ -172,15 +143,50 @@ with st.container(key='terra_workspace'):
                             st.image(read_member(ROOT, archive, photo['path']), caption=f'Photo {j+1}'+credit, use_container_width=True)
                         else:
                             st.container(border=True).caption(f'Photo {j+1} — non disponible')
+        with st.expander('Filtres et calques d’observation', expanded=False):
+            st.markdown('**🔎 Calques d’observation**')
+            st.caption('Les calques illustrent les indices ; seuls les filtres éliminent des territoires.')
+            observed = []
+            for theme, rows in catalog.groupby('theme_canva', sort=True):
+                codes = rows.code_filtre.tolist()
+                observed.extend(st.multiselect(theme, codes, format_func=lambda c: layers_catalog[c]['label'], key='observe_' + theme))
+            st.divider()
+            st.markdown('**🧩 Indices de déduction**')
+            st.caption('Coche les caractéristiques que tu reconnais. Les territoires incompatibles disparaissent.')
+            if st.button('Réinitialiser les filtres', use_container_width=True, disabled=answered):
+                for code in catalog.code_filtre:
+                    st.session_state['filter_' + code] = False
+                st.session_state.pop('terra_zone', None)
+            chosen = []
+            for theme, rows in catalog.groupby('theme_canva', sort=True):
+                with st.container():
+                    st.subheader(theme)
+                    for category, items in rows.groupby('categorie_canva', sort=True):
+                        st.markdown('**' + category + '**')
+                        for row in items.itertuples():
+                            if st.checkbox(row.filtre_canva, key='filter_' + row.code_filtre, disabled=answered):
+                                chosen.append(row.code_filtre)
+
         st.subheader('Indices sélectionnés')
         for item in catalog[catalog.code_filtre.isin(chosen)].itertuples():
             st.markdown(f'<span style="color:{item.couleur_hex}">●</span> {item.filtre_canva}', unsafe_allow_html=True)
         if not chosen:
             st.caption('Aucun filtre actif.')
+    compatible, uncertain = filter_zones(matrix, chosen)
+    with metrics_slot:
+        a,b,c = st.columns(3)
+        a.metric('🌍 Territoires possibles', len(compatible))
+        b.metric('✖ Éliminés', 115-len(compatible))
+        c.metric('❓ Incertains', len(uncertain))
     with right:
         with st.container(key='terra_map'):
             st.subheader('Explorer la carte')
-            st.caption('Contours : vert = compatible · ocre pointillé = incertain · gris = éliminé · bleu foncé = sélection')
+            st.markdown('🔵 Possible &nbsp; 🟠 Incertain &nbsp; 🟣 Sélectionné &nbsp; 🟢 Réponse révélée')
+            st.caption('Les territoires éliminés ne sont plus dessinés. La carte se recentre sur les territoires restants.')
+            if chosen and not answered:
+                st.progress((115-len(compatible))/115, text=f"Enquête : {115-len(compatible)} territoires éliminés sur 115")
+            if len(compatible) == 1 and not answered:
+                st.success('Un seul territoire reste possible ! Examine-le avant de répondre.')
             for code in observed:
                 entry = layers_catalog[code]
                 st.markdown(f'<span style="color:{entry["color"]}">●</span> {entry["label"]}', unsafe_allow_html=True)
@@ -188,7 +194,7 @@ with st.container(key='terra_workspace'):
                 st.session_state.pop('terra_zone', None)
             try:
                 active_layers = [(code, layers_catalog[code], cached_layer(archive, code, layers_catalog[code])) for code in observed]
-                m = make_thematic_map(web_geo, compatible, uncertain, st.session_state.get('terra_zone'), active_layers)
+                m = make_thematic_map(web_geo, compatible, uncertain, st.session_state.get('terra_zone'), active_layers, answer=record['code_ensem'] if answered else None)
             except Exception as exc:
                 st.error(f'Impossible de charger un calque : {exc}')
                 st.stop()
@@ -196,7 +202,8 @@ with st.container(key='terra_workspace'):
                 for i, photo in enumerate(record['photos'], 1):
                     folium.Marker([photo.get('latitude',record['latitude']), photo.get('longitude',record['longitude'])], tooltip=f'Point de vue {i}', icon=folium.Icon(color='red')).add_to(m)
             map_height = 650 if st.toggle('Agrandir la carte', value=False, key='terra_large_map') else 440
-            result = st_folium(m, key='terra_map_' + record['id'] + ('_answer' if answered else ''), height=map_height, use_container_width=True, returned_objects=['last_clicked'])
+            view_id = hashlib.sha256(repr((sorted(chosen), sorted(observed), st.session_state.get('terra_zone'), answered)).encode()).hexdigest()[:12]
+            result = st_folium(m, key='terra_map_' + record['id'] + '_' + view_id, height=map_height, use_container_width=True, returned_objects=['last_clicked'])
             click = result.get('last_clicked')
             if click and not answered:
                 matches = zones_at_point(geo, click['lat'], click['lng'], compatible)
