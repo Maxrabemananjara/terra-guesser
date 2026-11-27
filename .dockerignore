@@ -1,0 +1,10 @@
+.git
+.terra
+__pycache__
+**/__pycache__
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+browser-artifacts
+data/photos
+*.zip
