@@ -30,15 +30,15 @@ def cached_layer(archive, code, entry):
 def bundled_archive():
     return load_bundled(ROOT)
 
+server_archive = os.environ.get('TERRA_DATA_ZIP')
 try:
-    archive = bundled_archive()
+    archive = None if server_archive else bundled_archive()
 except (OSError, ValueError) as exc:
     st.error(f'Données serveur : {exc}')
     st.stop()
 if archive is not None:
     os.environ['TERRA_PUBLIC'] = '1'
     os.environ['TERRA_ALLOW_DEMO'] = '0'
-server_archive = os.environ.get('TERRA_DATA_ZIP')
 if archive is None and server_archive:
     try:
         archive = Path(server_archive).read_bytes()
