@@ -14,3 +14,6 @@ Ne jamais activer TERRA_ALLOW_DEMO sur un serveur ouvert au public. Aucun fichie
 
 ## CI
 Le workflow teste la compilation, le moteur de notation et la protection contre les commandes périmées, puis le démarrage Streamlit sans données privées. Les tests avec données restent à lancer avec TERRA_DATA_ZIP pointant vers le V4 : python -m unittest tests.test_interface_data tests.test_thematic_layers tests.test_rounds tests.test_parties tests.test_scoring tests.test_release -v.
+
+## Validation responsive et provisionnement
+Le workflow inclut un parcours réel sur cinq tailles Chromium avec une fixture strictement synthétique, sans photos privées. Exécuter aussi les tests tactiles et de performances avec les données autorisées avant diffusion. Pour éviter tout import côté joueur, placer le paquet autorisé dans un emplacement serveur et définir TERRA_DATA_ZIP sur son chemin, ou décompresser data/ à la racine. Ce fichier doit être fourni au serveur lors du déploiement, jamais téléchargé par chaque élève.

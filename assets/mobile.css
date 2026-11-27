@@ -1,0 +1,24 @@
+/* Responsive Terra Guesser : disposition ciblée, sans toucher au moteur. */
+.terra-banner {background:#FEDCB5;padding:clamp(.85rem,2vw,1.4rem);border-radius:14px;color:#263D59;margin-bottom:1rem;overflow-wrap:anywhere;}
+.terra-banner h1 {margin:0;font-size:clamp(1.55rem,4vw,2.1rem);}
+.st-key-terra_workspace, .st-key-terra_photo_grid, .st-key-terra_metrics {min-width:0;max-width:100%;}
+.st-key-terra_workspace [data-testid="stColumn"], .st-key-terra_metrics [data-testid="stColumn"] {min-width:0;}
+.st-key-terra_photo_grid [data-testid="stImage"] img {width:100%;height:auto;object-fit:contain;}
+.st-key-terra_map [data-testid="stCustomComponentV1"], .st-key-terra_map iframe {max-width:100%;}
+[data-testid="stMetricLabel"] p {white-space:normal;overflow-wrap:anywhere;}
+[data-testid="stMarkdownContainer"] {overflow-wrap:anywhere;}
+[data-testid="stTable"] {max-width:100%;overflow-x:auto;}
+@media (max-width: 1024px) {
+  .st-key-terra_workspace [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] .st-key-terra_map) {flex-direction:column!important;gap:1rem!important;}
+  .st-key-terra_workspace [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] .st-key-terra_map) > [data-testid="stColumn"] {width:100%!important;flex:1 1 auto!important;min-width:0!important;}
+}
+@media (max-width: 600px) {
+  [data-testid="stMainBlockContainer"] {padding-left:1rem!important;padding-right:1rem!important;}
+  .st-key-terra_photo_grid [data-testid="stHorizontalBlock"] {flex-direction:row!important;flex-wrap:nowrap!important;gap:.5rem!important;}
+  .st-key-terra_photo_grid [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {width:calc((100% - .5rem)/2)!important;flex:1 1 0!important;min-width:0!important;}
+  .st-key-terra_metrics [data-testid="stHorizontalBlock"] {flex-direction:row!important;flex-wrap:wrap!important;gap:.5rem!important;}
+  .st-key-terra_metrics [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {width:calc((100% - .5rem)/2)!important;flex:1 1 130px!important;min-width:0!important;}
+  [data-testid="stMetricValue"] {font-size:1.6rem!important;}
+  [data-testid="stButton"] button, [data-testid="stDownloadButton"] button, [data-testid="stSelectbox"] [role="combobox"], [data-testid="stMultiSelect"] [role="combobox"] {min-height:44px;}
+  [data-testid="stCheckbox"] label, [data-testid="stRadio"] label {min-height:44px;align-items:center;}
+}

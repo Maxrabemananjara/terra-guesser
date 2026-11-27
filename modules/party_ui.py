@@ -69,7 +69,10 @@ def party_screen(records, dataset, clear_round):
     st.caption(f'Barème : {POINTS_PER_CORRECT} points par bonne réponse, 0 sinon. Aucun bonus de vitesse.')
     if board['revealed']:
         st.subheader('Classement final' if board['finished'] else 'Classement provisoire')
-        st.table([{'Rang': r['rank'], 'Équipe': r['name'], 'Bonnes réponses': r['correct'], 'Points': r['points']} for r in board['rows']])
+        for r in board['rows']:
+            with st.container(border=True):
+                st.write(f"#{r['rank']} — {r['name']}")
+                st.caption(f"{r['correct']} bonne(s) réponse(s) · {r['points']} points")
         if board['finished']:
             champions = winners(board)
             st.success(('Équipe gagnante : ' if len(champions)==1 else 'Équipes gagnantes ex æquo : ') + ', '.join(champions))
@@ -77,7 +80,8 @@ def party_screen(records, dataset, clear_round):
                 st.download_button('Exporter les résultats (CSV)', results_csv(board), file_name=f'terra_{code}_resultats.csv', mime='text/csv')
     if phase == 'lobby' or p['actor'] is None or phase == 'finished':
         st.write('Équipes inscrites :', len(p['teams']))
-        st.table(p['teams'])
+        for team in p['teams']:
+            st.write(f"{team['name']} · {team['size']} élèves")
         if phase == 'finished':
             st.success('Partie terminée. Félicitations aux équipes !')
         elif p['actor'] is None:

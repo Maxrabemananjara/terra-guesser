@@ -1,7 +1,7 @@
 # Terra Guesser
 Défis Datable — équipe MEE. Jeu pédagogique de déduction géographique.
 
-## Prototype (étape 11)
+## Prototype (étape 12)
 115 ensembles, 31 calques et filtres, 2 manches de démonstration avec une photo chacune, validation et correction géographique.
 Les photos de démonstration ne sont pas publiées dans le dépôt. Leur identité originale et les droits de diffusion ne sont pas validés. Le mode normal exige quatre photos distinctes, identifiées et autorisées par manche.
 
@@ -22,3 +22,6 @@ L’enseignant crée une partie, communique le code à six caractères, puis lan
 100 points par bonne réponse, 0 sinon. Aucun bonus de vitesse. Classement cumulé après chaque correction révélée, ex æquo en cas d'égalité (rang 1, 1, 3). Tous les vainqueurs sont affichés à la fin. Export CSV final réservé à l'enseignant dans l'interface. Tests indépendants des données : python -m unittest tests.test_scoring (64 scénarios de trois équipes sur deux manches).
 
 Voir [préparation du déploiement](DEPLOYMENT.md). Le mode démonstration est désactivé par défaut.
+
+## Étape 12 — Responsive
+Mise en page verticale jusqu'à 1024 px, grille photo 2 × 2, commandes tactiles, filtres accessibles sur la page, hauteur de carte réglable, sélection alternative par code et classement en cartes. Tests Chromium de référence et test navigateur réel automatisé pour 360, 390, 768, 1024, 1920 px. L'application réelle reste à valider tant que la CI n'a pas terminé. Le serveur peut fournir le paquet de données via TERRA_DATA_ZIP ; aucun import n'est nécessaire pour les joueurs dans ce cas.

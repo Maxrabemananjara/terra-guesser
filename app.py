@@ -11,13 +11,9 @@ from modules.interface_data import load_data, filter_zones, web_geometry, zones_
 from modules.thematic_layers import CATALOG, load_catalog, load_layer, make_thematic_map
 from modules.rounds import CATALOG as PHOTO_CATALOG, read_member, load_rounds, eligible_rounds, new_game, submit_answer, advance
 
-st.set_page_config(page_title='Terra Guesser', page_icon='🌍', layout='wide')
+st.set_page_config(page_title='Terra Guesser', page_icon='🌍', layout='wide', initial_sidebar_state='collapsed')
 ROOT = Path(__file__).resolve().parent
-st.markdown('''<style>
-[data-testid="stSidebar"] {background:#f7f3ed;}
-.terra-banner {background:#FEDCB5;padding:1.1rem 1.4rem;border-radius:14px;color:#263D59;margin-bottom:1rem;}
-.terra-banner h1 {margin:0;font-size:2.1rem;}
-</style><div class="terra-banner"><h1>Terra Guesser</h1>Observe · Récolte · Superpose · Interprète · Restitue</div>''', unsafe_allow_html=True)
+st.markdown('<style>' + (ROOT / 'assets/mobile.css').read_text(encoding='utf-8') + '</style><div class="terra-banner"><h1>Terra Guesser</h1>Observe · Récolte · Superpose · Interprète · Restitue</div>', unsafe_allow_html=True)
 st.caption('Défis Datable · Équipe MEE | Prototype de l’interface cartographique')
 
 @st.cache_data(show_spinner='Chargement des données vérifiées…')
@@ -30,7 +26,14 @@ def cached_layer(archive, code, entry):
     return load_layer(ROOT, archive, code, entry)
 
 archive = None
-if not all((ROOT / p).exists() for p in ('data/processed/matrice_filtres_application.csv', 'data/geographic/ensembles_paysagers.geojson.gz', CATALOG, PHOTO_CATALOG)):
+server_archive = os.environ.get('TERRA_DATA_ZIP')
+if server_archive:
+    try:
+        archive = Path(server_archive).read_bytes()
+    except OSError as exc:
+        st.error(f'Paquet serveur inaccessible : {exc}')
+        st.stop()
+elif not all((ROOT / p).exists() for p in ('data/processed/matrice_filtres_application.csv', 'data/geographic/ensembles_paysagers.geojson.gz', CATALOG, PHOTO_CATALOG)):
     upload = st.file_uploader('Importer le paquet Terra Guesser V4', type=['zip'])
     if upload is None:
         st.info('Le dépôt ne contient pas encore les données. Importe le ZIP V4 pour ouvrir la carte réelle.')
@@ -108,7 +111,7 @@ if not collective:
 if len(record['photos']) < 4:
     st.caption(f"Démonstration privée : {len(record['photos'])}/4 photos disponibles pour ce lieu.")
 
-with st.sidebar:
+with st.expander('Filtres et calques d’observation', expanded=False):
     st.header('Calques d’observation')
     st.caption('Afficher une couche ne modifie pas les zones compatibles.')
     observed = []
@@ -132,58 +135,75 @@ with st.sidebar:
                         chosen.append(row.code_filtre)
 
 compatible, uncertain = filter_zones(matrix, chosen)
-a,b,c = st.columns(3)
-a.metric('Zones encore possibles', len(compatible))
-b.metric('Zones éliminées', 115-len(compatible))
-c.metric('Compatibilité incertaine', len(uncertain))
-left, right = st.columns([1,2])
-with left:
-    st.subheader('Observer le paysage')
-    for row in range(2):
-        for i,col in enumerate(st.columns(2)):
-            with col:
-                j = row * 2 + i
-                if j < len(record['photos']):
-                    st.image(read_member(ROOT, archive, record['photos'][j]['path']), caption=f'Photo {j+1}', use_container_width=True)
+with st.container(key='terra_metrics'):
+    a,b,c = st.columns(3)
+    a.metric('Zones encore possibles', len(compatible))
+    b.metric('Zones éliminées', 115-len(compatible))
+    c.metric('Compatibilité incertaine', len(uncertain))
+with st.container(key='terra_workspace'):
+    left, right = st.columns([1,2])
+    with left:
+        st.subheader('Observer le paysage')
+        with st.container(key='terra_photo_grid'):
+            for row in range(2):
+                for i,col in enumerate(st.columns(2)):
+                    with col:
+                        j = row * 2 + i
+                        if j < len(record['photos']):
+                            st.image(read_member(ROOT, archive, record['photos'][j]['path']), caption=f'Photo {j+1}', use_container_width=True)
+                        else:
+                            st.container(border=True).caption(f'Photo {j+1} — non disponible')
+        st.subheader('Indices sélectionnés')
+        for item in catalog[catalog.code_filtre.isin(chosen)].itertuples():
+            st.markdown(f'<span style="color:{item.couleur_hex}">●</span> {item.filtre_canva}', unsafe_allow_html=True)
+        if not chosen:
+            st.caption('Aucun filtre actif.')
+    with right:
+        with st.container(key='terra_map'):
+            st.subheader('Explorer la carte')
+            st.caption('Contours : vert = compatible · ocre pointillé = incertain · gris = éliminé · bleu foncé = sélection')
+            for code in observed:
+                entry = layers_catalog[code]
+                st.markdown(f'<span style="color:{entry["color"]}">●</span> {entry["label"]}', unsafe_allow_html=True)
+            if st.session_state.get('terra_zone') not in compatible:
+                st.session_state.pop('terra_zone', None)
+            try:
+                active_layers = [(code, layers_catalog[code], cached_layer(archive, code, layers_catalog[code])) for code in observed]
+                m = make_thematic_map(web_geo, compatible, uncertain, st.session_state.get('terra_zone'), active_layers)
+            except Exception as exc:
+                st.error(f'Impossible de charger un calque : {exc}')
+                st.stop()
+            if answered:
+                folium.Marker([record['latitude'], record['longitude']], tooltip='Localisation réelle', icon=folium.Icon(color='red')).add_to(m)
+            map_height = 650 if st.toggle('Agrandir la carte', value=False, key='terra_large_map') else 440
+            result = st_folium(m, key='terra_map_' + record['id'] + ('_answer' if answered else ''), height=map_height, use_container_width=True, returned_objects=['last_clicked'])
+            click = result.get('last_clicked')
+            if click and not answered:
+                matches = zones_at_point(geo, click['lat'], click['lng'], compatible)
+                if matches:
+                    picked = st.selectbox('Zone au point sélectionné', matches, format_func=lambda x: 'Zone '+x)
+                    if st.button('Retenir cette zone'):
+                        st.session_state['terra_zone'] = picked
+                        st.rerun()
                 else:
-                    st.container(border=True).caption(f'Photo {j+1} — non disponible')
-    st.subheader('Indices sélectionnés')
-    for item in catalog[catalog.code_filtre.isin(chosen)].itertuples():
-        st.markdown(f'<span style="color:{item.couleur_hex}">●</span> {item.filtre_canva}', unsafe_allow_html=True)
-    if not chosen:
-        st.caption('Aucun filtre actif.')
-with right:
-    st.subheader('Explorer la carte')
-    st.caption('Contours : vert = compatible · ocre pointillé = incertain · gris = éliminé · bleu foncé = sélection')
-    for code in observed:
-        entry = layers_catalog[code]
-        st.markdown(f'<span style="color:{entry["color"]}">●</span> {entry["label"]}', unsafe_allow_html=True)
-    if st.session_state.get('terra_zone') not in compatible:
-        st.session_state.pop('terra_zone', None)
-    try:
-        active_layers = [(code, layers_catalog[code], cached_layer(archive, code, layers_catalog[code])) for code in observed]
-        m = make_thematic_map(web_geo, compatible, uncertain, st.session_state.get('terra_zone'), active_layers)
-    except Exception as exc:
-        st.error(f'Impossible de charger un calque : {exc}')
-        st.stop()
-    if answered:
-        folium.Marker([record['latitude'], record['longitude']], tooltip='Localisation réelle', icon=folium.Icon(color='red')).add_to(m)
-    result = st_folium(m, key='terra_map_' + record['id'] + ('_answer' if answered else ''), height=560, use_container_width=True, returned_objects=['last_clicked'])
-    click = result.get('last_clicked')
-    if click and not answered:
-        matches = zones_at_point(geo, click['lat'], click['lng'], compatible)
-        if matches:
-            picked = st.selectbox('Zone au point sélectionné', matches, format_func=lambda x: 'Zone '+x)
-            if st.button('Retenir cette zone'):
-                st.session_state['terra_zone'] = picked
-                st.rerun()
-        else:
-            st.caption('Ce point ne correspond à aucune zone encore compatible.')
-    if not compatible:
-        st.warning('Aucune zone restante : retire un critère pour revoir ton hypothèse.')
-    if st.session_state.get('terra_zone'):
-        st.success('Zone retenue : ' + st.session_state['terra_zone'])
-    st.caption('Contours simplifiés uniquement pour l’affichage ; sélection calculée sur les contours originaux.')
+                    st.caption('Ce point ne correspond à aucune zone encore compatible.')
+            if not answered and compatible:
+
+                with st.expander('Sélection alternative par code de zone'):
+
+                    alternative = st.selectbox('Code de zone', [''] + sorted(compatible), format_func=lambda x: x or 'Choisir une zone')
+
+                    if st.button('Retenir le code', disabled=not alternative):
+
+                        st.session_state['terra_zone'] = alternative
+
+                        st.rerun()
+
+            if not compatible:
+                st.warning('Aucune zone restante : retire un critère pour revoir ton hypothèse.')
+            if st.session_state.get('terra_zone'):
+                st.success('Zone retenue : ' + st.session_state['terra_zone'])
+            st.caption('Contours simplifiés uniquement pour l’affichage ; sélection calculée sur les contours originaux.')
 if not answered and st.session_state.get('terra_zone') in compatible:
     if st.button('Valider ma réponse', type='primary'):
         try:
