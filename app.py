@@ -1,5 +1,6 @@
 from pathlib import Path
 import hashlib
+import os
 from modules.party_ui import party_screen
 from modules.parties import PartyError
 from modules.scoring import points, POINTS_PER_CORRECT
@@ -77,7 +78,7 @@ if collective:
         st.session_state['terra_zone'] = shared['own']['selected']
 elif 'terra_game' not in st.session_state:
     st.subheader('Nouvelle partie')
-    demo = st.checkbox('Mode démonstration privée : images fournies, droits et identité originale non confirmés')
+    demo = os.environ.get('TERRA_ALLOW_DEMO') == '1' and st.checkbox('Mode démonstration privée : images fournies, droits et identité originale non confirmés')
     available = eligible_rounds(records, demo)
     if not available:
         st.info('Aucune manche de diffusion validée : quatre images distinctes, identité et droits vérifiés sont requis.')

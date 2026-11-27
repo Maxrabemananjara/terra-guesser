@@ -91,12 +91,14 @@ class Store:
                 own = {'selected':own['selected']}
             return {'code':code,'actor':actor,'order':json.loads(p['rounds']),'index':idx,'phase':phase,'teams':teams,'submitted':sum(a['idx']==idx for a in rows),'own':own}
 
-    def control(self, code, dataset, token, action):
+    def control(self, code, dataset, token, action, expected_index=None):
         with self.tx() as db:
             p = self._party(db,code,dataset)
             if self._actor(db,p,token) is not None:
                 raise PartyError('Action réservée à l’enseignant.')
             phase, idx = p['phase'], p['idx']
+            if expected_index is not None and idx != expected_index:
+                raise PartyError('Manche expirée : actualise la partie.')
             total = db.execute('SELECT count(*) FROM teams WHERE code=?',(code,)).fetchone()[0]
             answered = db.execute('SELECT count(*) FROM answers WHERE code=? AND idx=?',(code,idx)).fetchone()[0]
             if action == 'start' and phase == 'lobby' and total >= 2:

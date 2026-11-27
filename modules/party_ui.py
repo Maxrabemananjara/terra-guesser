@@ -29,7 +29,7 @@ def party_screen(records, dataset, clear_round):
         mode = st.radio('Accès', ['Créer une partie (enseignant)', 'Rejoindre une partie (équipe)', 'Reprendre une session'])
         try:
             if mode.startswith('Créer'):
-                demo = st.checkbox('Démonstration privée — droits des photos non confirmés')
+                demo = os.environ.get('TERRA_ALLOW_DEMO') == '1' and st.checkbox('Démonstration privée — droits des photos non confirmés')
                 available = eligible_rounds(records, demo)
                 if not available:
                     st.info('Aucune manche de diffusion autorisée.')
@@ -91,7 +91,7 @@ def party_screen(records, dataset, clear_round):
             }[phase]
             if st.button(label, disabled=not enabled, type='primary'):
                 try:
-                    store.control(code,dataset,token,action)
+                    store.control(code,dataset,token,action,expected_index=p['index'])
                     st.rerun()
                 except PartyError as exc:
                     st.error(str(exc))

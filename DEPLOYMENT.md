@@ -1,0 +1,16 @@
+# Préparation du déploiement
+## Démonstration privée locale
+Installer Python 3.12, puis pip install -r requirements.txt. Définir TERRA_ALLOW_DEMO=1 dans l'environnement, puis lancer streamlit run app.py. Importer le paquet V4 depuis l'interface (ou décompresser ses données à la racine). Ne pas partager les photographies de démonstration sans autorisation. Le mode collectif nécessite une seule instance et des données identiques dans toutes les sessions.
+
+## Déploiement public : prérequis non satisfaits
+- Quatre photographies distinctes et identifiées par manche ; droits de diffusion documentés.
+- Contrôle des libellés exacts du Canva, non accessibles sous forme de texte.
+- Tests du parcours dans un navigateur et sur plusieurs appareils.
+- Stockage durable des parties sur serveur (SQLite sur volume persistant pour une seule instance ; PostgreSQL pour plusieurs instances).
+- Authentification des enseignants, contrôle d'accès à l'import de données, supervision et protection des données avant ouverture publique.
+- Optimiser et tester les performances lorsque de nombreux calques sont activés.
+
+Ne jamais activer TERRA_ALLOW_DEMO sur un serveur ouvert au public. Aucun fichier photo privé n'est poussé sur GitHub.
+
+## CI
+Le workflow teste la compilation, le moteur de notation et la protection contre les commandes périmées, puis le démarrage Streamlit sans données privées. Les tests avec données restent à lancer avec TERRA_DATA_ZIP pointant vers le V4 : python -m unittest tests.test_interface_data tests.test_thematic_layers tests.test_rounds tests.test_parties tests.test_scoring tests.test_release -v.
