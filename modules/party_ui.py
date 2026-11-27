@@ -4,6 +4,7 @@ from pathlib import Path
 import streamlit as st
 from modules.parties import Store, PartyError
 from modules.rounds import eligible_rounds
+from modules.scoring import leaderboard, winners, results_csv, POINTS_PER_CORRECT
 
 
 @st.cache_resource
@@ -64,11 +65,21 @@ def party_screen(records, dataset, clear_round):
     st.button('Actualiser la partie')
     phase = p['phase']
     st.caption('Enseignant' if p['actor'] is None else 'Équipe : '+p['actor'])
+    board = leaderboard(store, code, dataset, token)
+    st.caption(f'Barème : {POINTS_PER_CORRECT} points par bonne réponse, 0 sinon. Aucun bonus de vitesse.')
+    if board['revealed']:
+        st.subheader('Classement final' if board['finished'] else 'Classement provisoire')
+        st.table([{'Rang': r['rank'], 'Équipe': r['name'], 'Bonnes réponses': r['correct'], 'Points': r['points']} for r in board['rows']])
+        if board['finished']:
+            champions = winners(board)
+            st.success(('Équipe gagnante : ' if len(champions)==1 else 'Équipes gagnantes ex æquo : ') + ', '.join(champions))
+            if p['actor'] is None:
+                st.download_button('Exporter les résultats (CSV)', results_csv(board), file_name=f'terra_{code}_resultats.csv', mime='text/csv')
     if phase == 'lobby' or p['actor'] is None or phase == 'finished':
         st.write('Équipes inscrites :', len(p['teams']))
         st.table(p['teams'])
         if phase == 'finished':
-            st.success('Partie terminée. Le classement sera intégré à l’étape suivante.')
+            st.success('Partie terminée. Félicitations aux équipes !')
         elif p['actor'] is None:
             if phase != 'lobby':
                 st.subheader(f"Manche {p['index']+1}/{len(p['order'])}")

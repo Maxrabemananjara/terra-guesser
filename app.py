@@ -2,6 +2,7 @@ from pathlib import Path
 import hashlib
 from modules.party_ui import party_screen
 from modules.parties import PartyError
+from modules.scoring import points, POINTS_PER_CORRECT
 import folium
 import streamlit as st
 from streamlit_folium import st_folium
@@ -92,6 +93,7 @@ if not collective:
 if not collective and game['index'] >= len(game['order']):
     st.header('Partie terminée')
     st.metric('Bonnes réponses', f"{sum(a['correct'] for a in game['answers'])} / {len(game['order'])}")
+    st.metric('Score total', f"{sum(points(a['correct']) for a in game['answers'])} / {len(game['order'])*POINTS_PER_CORRECT} points")
     for answer in game['answers']:
         st.write(by_id[answer['id']]['place'], '—', 'Correct' if answer['correct'] else 'Incorrect')
     st.button('Nouvelle partie', on_click=restart)
@@ -196,6 +198,7 @@ if answered:
     answer = shared['own'] if collective else game['answers'][game['index']]
     props = zone_props[record['code_ensem']]
     st.header('Correction géographique')
+    st.metric('Points de la manche', points(answer['correct']))
     if answer['correct']:
         st.success('Bonne réponse !')
     else:
@@ -213,4 +216,4 @@ if answered:
         st.info('Attends le lancement de la prochaine manche par l’enseignant, puis actualise la partie.')
     else:
         st.button('Manche suivante' if game['index']+1 < len(game['order']) else 'Voir les résultats', on_click=next_round, type='primary')
-st.caption('Sources : DatARA / DREAL Auvergne-Rhône-Alpes · CORINE Land Cover 2018. Le classement partagé sera ajouté ultérieurement.')
+st.caption('Sources : DatARA / DREAL Auvergne-Rhône-Alpes · CORINE Land Cover 2018. ')
