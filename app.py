@@ -155,7 +155,9 @@ with st.container(key='terra_workspace'):
                     with col:
                         j = row * 2 + i
                         if j < len(record['photos']):
-                            st.image(read_member(ROOT, archive, record['photos'][j]['path']), caption=f'Photo {j+1}', use_container_width=True)
+                            photo = record['photos'][j]
+                            credit = f" — {photo['author']} ({photo['license']})" if photo.get('author') else ''
+                            st.image(read_member(ROOT, archive, photo['path']), caption=f'Photo {j+1}'+credit, use_container_width=True)
                         else:
                             st.container(border=True).caption(f'Photo {j+1} — non disponible')
         st.subheader('Indices sélectionnés')
@@ -240,11 +242,18 @@ if answered:
         for i, photo in enumerate(record['photos'], 1):
             if photo.get('source'):
                 st.write(f"Photo {i} : {photo['author']} — {photo['license']}")
-                st.link_button('Fiche originale', photo['source'])
-                st.link_button('Licence', photo['license_url'])
+                st.markdown('[Fiche originale](' + photo['source'] + ')')
+                st.markdown('[Licence](' + photo['license_url'] + ')')
                 st.caption(photo['modifications'])
     if collective:
         st.info('Attends le lancement de la prochaine manche par l’enseignant, puis actualise la partie.')
     else:
         st.button('Manche suivante' if game['index']+1 < len(game['order']) else 'Voir les résultats', on_click=next_round, type='primary')
+if not answered and any(p.get('source') for p in record['photos']):
+    with st.expander('Crédits photographiques (les liens peuvent révéler le lieu)'):
+        for photo in record['photos']:
+            if photo.get('source'):
+                st.write(photo['author'], '—', photo['license'], '—', photo['modifications'])
+                st.markdown('[Fiche originale](' + photo['source'] + ')')
+                st.markdown('[Licence](' + photo['license_url'] + ')')
 st.caption('Sources : DatARA / DREAL Auvergne-Rhône-Alpes · CORINE Land Cover 2018. ')

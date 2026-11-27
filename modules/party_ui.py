@@ -42,8 +42,12 @@ def party_screen(records, dataset, clear_round):
                     st.info('Aucune manche de diffusion autorisée.')
                     st.stop()
                 n = st.selectbox('Nombre de manches', range(1,len(available)+1), index=len(available)-1)
+                school = st.text_input('Établissement (facultatif)', max_chars=80)
+                level = st.text_input('Niveau scolaire (facultatif)', max_chars=80)
+                class_label = st.text_input('Classe (facultatif)', max_chars=80)
+                st.caption('Utiliser uniquement des informations de classe, sans noms d’élèves.')
                 if st.button('Créer la partie', type='primary'):
-                    connect(*store.create(dataset, [r['id'] for r in available[:n]]))
+                    connect(*store.create(dataset, [r['id'] for r in available[:n]], {'school':school,'level':level,'class_label':class_label}))
             elif mode.startswith('Rejoindre'):
                 code = st.text_input('Code de participation').strip().upper()
                 name = st.text_input('Nom de l’équipe (sans nom d’élève)')
@@ -65,7 +69,9 @@ def party_screen(records, dataset, clear_round):
         st.error(str(exc))
         st.button('Retour', on_click=leave)
         st.stop()
-    st.write('Code de participation :', code)
+    st.write(f'Code de participation : {code}')
+    if p['metadata']:
+        st.caption(' · '.join(p['metadata'].get(k,'') for k in ('school','level','class_label') if p['metadata'].get(k)))
     with st.expander('Clé de reprise (à garder privée)'):
         st.code(token)
     st.button('Quitter la session', on_click=leave)

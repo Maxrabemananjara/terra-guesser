@@ -1,5 +1,6 @@
 """Vérification de l'application réelle avec Playwright et données synthétiques."""
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -59,3 +60,52 @@ class ResponsiveTests(unittest.TestCase):
                         page.screenshot(path=f'browser-artifacts/{width}.png',full_page=True)
                         page.close()
             browser.close()
+
+    def test_collective_browser(self):
+        with sync_playwright() as p:
+            browser=p.chromium.launch(headless=True)
+            contexts=[browser.new_context(viewport={'width':390 if i else 1280,'height':900}) for i in range(3)]
+            teacher,one,two=[c.new_page() for c in contexts]
+            try:
+                teacher.goto('http://localhost:8765')
+                teacher.get_by_role('button',name='Créer la partie').click(timeout=30000)
+                code_text=teacher.get_by_text(re.compile(r'Code de participation : [A-Z2-9]{6}'))
+                expect(code_text).to_be_visible(timeout=30000)
+                code=re.search(r'[A-Z2-9]{6}$',code_text.inner_text().strip()).group()
+                for page,name in ((one,'Alpha'),(two,'Beta')):
+                    page.goto('http://localhost:8765')
+                    page.get_by_text('Rejoindre une partie (équipe)',exact=True).click(timeout=30000)
+                    page.get_by_role('textbox',name='Code de participation').fill(code)
+                    page.get_by_role('textbox',name='Nom de l’équipe (sans nom d’élève)').fill(name)
+                    page.get_by_role('textbox',name='Nom de l’équipe (sans nom d’élève)').press('Tab')
+                    page.get_by_role('button',name='Rejoindre',exact=True).click()
+                    expect(page.get_by_text('En attente du lancement par l’enseignant. Actualise la partie.')).to_be_visible(timeout=30000)
+                teacher.get_by_role('button',name='Actualiser la partie').click()
+                teacher.get_by_role('button',name='Lancer la partie').click(timeout=30000)
+                for page,guess in ((one,'100'),(two,'101')):
+                    page.get_by_role('button',name='Actualiser la partie').click()
+                    expect(page.get_by_role('heading',name='Observer le paysage')).to_be_visible(timeout=30000)
+                    page.get_by_text('Sélection alternative par code de zone',exact=True).click()
+                    page.get_by_role('textbox',name='Code de zone').fill(guess)
+                    page.get_by_role('textbox',name='Code de zone').press('Tab')
+                    page.get_by_role('button',name='Retenir le code').click()
+                    page.get_by_role('button',name='Valider ma réponse').click()
+                    expect(page.get_by_text('Réponse enregistrée. En attente de la correction collective.')).to_be_visible(timeout=30000)
+                    expect(page.get_by_role('heading',name='Correction géographique')).to_have_count(0)
+                teacher.get_by_role('button',name='Actualiser la partie').click()
+                teacher.get_by_role('button',name='Révéler la correction').click(timeout=30000)
+                for page,correct in ((one,True),(two,False)):
+                    page.get_by_role('button',name='Actualiser la partie').click()
+                    expect(page.get_by_role('heading',name='Correction géographique')).to_be_visible(timeout=30000)
+                    expect(page.get_by_text('Bonne réponse !' if correct else 'Ce n’est pas le bon ensemble paysager.',exact=True)).to_be_visible()
+                teacher.get_by_role('button',name='Manche suivante / terminer').click(timeout=30000)
+                expect(teacher.get_by_text('Équipe gagnante : Alpha',exact=True)).to_be_visible(timeout=30000)
+                for page in (one,two):
+                    page.get_by_role('button',name='Actualiser la partie').click()
+                    expect(page.get_by_text('Équipe gagnante : Alpha',exact=True)).to_be_visible(timeout=30000)
+            finally:
+                Path('browser-artifacts').mkdir(exist_ok=True)
+                for name,page in zip(('teacher','team1','team2'),(teacher,one,two)):
+                    page.screenshot(path=f'browser-artifacts/{name}.png',full_page=True)
+                for context in contexts: context.close()
+                browser.close()

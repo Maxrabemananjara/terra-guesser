@@ -20,6 +20,8 @@ class Store:
         self.path = str(path)
         with self.tx() as db:
             db.execute('CREATE TABLE IF NOT EXISTS parties (code TEXT PRIMARY KEY, owner TEXT NOT NULL, dataset TEXT NOT NULL, rounds TEXT NOT NULL, idx INTEGER NOT NULL DEFAULT 0, phase TEXT NOT NULL DEFAULT "lobby")')
+            if 'metadata' not in {r['name'] for r in db.execute('PRAGMA table_info(parties)')}:
+                db.execute("ALTER TABLE parties ADD COLUMN metadata TEXT NOT NULL DEFAULT '{}'")
             db.execute('CREATE TABLE IF NOT EXISTS teams (code TEXT NOT NULL REFERENCES parties(code), name TEXT NOT NULL, token TEXT NOT NULL, size INTEGER NOT NULL, PRIMARY KEY(code, name), UNIQUE(code, token))')
             db.execute('CREATE TABLE IF NOT EXISTS answers (code TEXT NOT NULL, name TEXT NOT NULL, idx INTEGER NOT NULL, selected TEXT NOT NULL, correct INTEGER NOT NULL, PRIMARY KEY(code,name,idx), FOREIGN KEY(code,name) REFERENCES teams(code,name))')
 
@@ -38,16 +40,21 @@ class Store:
         finally:
             db.close()
 
-    def create(self, dataset, rounds):
+    def create(self, dataset, rounds, metadata=None):
         if not rounds or len(set(rounds)) != len(rounds):
             raise PartyError('Liste de manches invalide.')
+        metadata = metadata or {}
+        allowed = {'school', 'level', 'class_label'}
+        if not isinstance(metadata, dict) or set(metadata) - allowed or any(not isinstance(v,str) or len(v)>80 for v in metadata.values()):
+            raise PartyError('Informations de classe invalides.')
+        metadata = {k:v.strip() for k,v in metadata.items() if v.strip()}
         token = secrets.token_urlsafe(24)
         with self.tx() as db:
             while True:
                 code = ''.join(secrets.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in range(6))
                 if not db.execute('SELECT 1 FROM parties WHERE code=?',(code,)).fetchone():
                     break
-            db.execute('INSERT INTO parties(code,owner,dataset,rounds) VALUES(?,?,?,?)',(code,digest(token),dataset,json.dumps(rounds)))
+            db.execute('INSERT INTO parties(code,owner,dataset,rounds,metadata) VALUES(?,?,?,?,?)',(code,digest(token),dataset,json.dumps(rounds),json.dumps(metadata,ensure_ascii=False)))
         return code, token
 
     def _party(self, db, code, dataset):
@@ -89,7 +96,7 @@ class Store:
             own = next((a for a in rows if a['name']==actor and a['idx']==idx),None)
             if own is not None and phase == 'playing':
                 own = {'selected':own['selected']}
-            return {'code':code,'actor':actor,'order':json.loads(p['rounds']),'index':idx,'phase':phase,'teams':teams,'submitted':sum(a['idx']==idx for a in rows),'own':own}
+            return {'code':code,'actor':actor,'metadata':json.loads(p['metadata']),'order':json.loads(p['rounds']),'index':idx,'phase':phase,'teams':teams,'submitted':sum(a['idx']==idx for a in rows),'own':own}
 
     def control(self, code, dataset, token, action, expected_index=None):
         with self.tx() as db:
