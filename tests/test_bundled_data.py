@@ -20,3 +20,11 @@ class BundledDataTests(unittest.TestCase):
                 self.assertEqual(load_bundled(root),b'abcdef')
                 (root/'terra_guesser_public_v5.zip').write_bytes(b'bad')
                 with self.assertRaises(ValueError): load_bundled(root)
+
+    def test_compact(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)
+            (root/'terra_guesser_v5_deploiement.zip').write_bytes(b'compact')
+            with self.assertRaises(ValueError): load_bundled(root)
+            with patch('modules.bundled_data.DEPLOY_SHA256',hashlib.sha256(b'compact').hexdigest()):
+                self.assertEqual(load_bundled(root),b'compact')
