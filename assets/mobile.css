@@ -93,3 +93,39 @@
 }
 .st-key-terra_party_code {background:#FEDCB5;border-radius:16px;}
 [class*="st-key-terra_rank_"] {background:#FFF2DC;border-radius:14px;}
+
+/* Finition : rythmes de 8/16/24/32 px, accueil sans choix en double. */
+[data-testid="stMainBlockContainer"] {padding-top:3.75rem;padding-bottom:3rem;}
+.terra-banner {padding:clamp(1.25rem,3.5vw,2.5rem);margin-bottom:1rem;}
+.terra-banner p {margin:.65rem 0 1.2rem;}
+.terra-steps {gap:.65rem .85rem;}
+.terra-steps span {padding:.35rem .8rem;}
+.st-key-terra_home {margin-top:.5rem;margin-bottom:1.25rem;}
+.st-key-terra_home [data-testid="stVerticalBlock"] {gap:1.15rem;}
+.terra-intro {padding:1.3rem 1.5rem;margin-bottom:.55rem;}
+.terra-section-title {font-size:1.25rem;font-weight:800;letter-spacing:-.02em;margin:.4rem 0 .1rem;}
+.st-key-terra_home [role="radiogroup"] {display:grid!important;grid-template-columns:1fr 1fr;gap:1.1rem;align-items:stretch;}
+.st-key-terra_home [role="radiogroup"] > label {background:white!important;border:2px solid #E7D4ED;border-radius:18px;min-height:100px;padding:1.15rem 1.25rem!important;margin:0!important;align-items:center;cursor:pointer;transition:border-color .15s,background .15s;}
+.st-key-terra_home [role="radiogroup"] > label:has(input:checked) {border-color:#684192;background:#F5E9F9!important;box-shadow:0 3px 0 #68419220;}
+.st-key-terra_home [role="radiogroup"] > label:has(input:focus-visible) {outline:3px solid #FCA845;outline-offset:3px;}
+.st-key-terra_home [role="radiogroup"] [data-testid="stMarkdownContainer"] p {font-size:1rem;font-weight:750;}
+.st-key-terra_home [role="radiogroup"] > label:nth-child(1) [data-testid="stMarkdownContainer"] p::before {content:"🧭 "; }
+.st-key-terra_home [role="radiogroup"] > label:nth-child(2) [data-testid="stMarkdownContainer"] p::before {content:"🤝 "; }
+.st-key-terra_home [data-testid="stExpander"] {margin-top:.45rem;}
+.st-key-terra_home [data-testid="stExpander"] summary {padding:.9rem 1rem;}
+.st-key-terra_home [data-testid="stExpander"] ol {padding-left:1.5rem;line-height:1.8;}
+.st-key-terra_start {padding:1.25rem!important;border-radius:18px;background:#FFFDF9;}
+.st-key-terra_start [data-testid="stVerticalBlock"] {gap:1rem;}
+.st-key-terra_start [data-testid="stButton"] button {min-height:48px;}
+.st-key-terra_workspace [data-testid="stHorizontalBlock"] {column-gap:1.3rem;}
+.st-key-terra_map {padding:1.1rem;}
+@media(max-width:600px){
+ [data-testid="stMainBlockContainer"] {padding-top:3.2rem;padding-bottom:2rem;}
+ .terra-banner {margin-bottom:.5rem;padding:1.25rem;}
+ .terra-intro {padding:1rem 1.1rem;}
+ .st-key-terra_home [role="radiogroup"] {grid-template-columns:1fr;gap:.75rem;}
+ .st-key-terra_home [role="radiogroup"] > label {min-height:75px;padding:.85rem 1rem!important;}
+ .st-key-terra_home [data-testid="stVerticalBlock"] {gap:1rem;}
+ .st-key-terra_start {padding:1rem!important;}
+ .st-key-terra_map {padding:.65rem;}
+}

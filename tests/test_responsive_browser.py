@@ -37,6 +37,10 @@ class ResponsiveTests(unittest.TestCase):
                     try:
                         page.goto('http://localhost:8765')
                         page.get_by_text('Individuel',exact=True).click(timeout=30000)
+                        intro=page.locator('.terra-intro').bounding_box()
+                        modes=page.locator('.st-key-terra_home [role="radiogroup"]').bounding_box()
+                        self.assertGreaterEqual(modes['y']-intro['y']-intro['height'],12)
+                        expect(page.get_by_role('radio',name='Individuel')).to_be_checked()
                         page.get_by_role('button',name='Commencer la partie').click(timeout=30000)
                         expect(page.get_by_role('heading',name='Observer le paysage')).to_be_visible(timeout=30000)
                         expect(page.locator('.st-key-terra_photo_grid img')).to_have_count(4,timeout=30000)

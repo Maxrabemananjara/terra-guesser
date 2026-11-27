@@ -92,10 +92,12 @@ collective = 'terra_party' in st.session_state
 if not collective and 'terra_game' not in st.session_state:
     with st.container(key='terra_home'):
         st.markdown('<div class="terra-intro"><b>Ta mission, si tu l’acceptes…</b><p>Quatre photos, des indices et une carte. Réduis les possibilités et retrouve le territoire mystère.</p></div>', unsafe_allow_html=True)
-        st.markdown('<div class="terra-mode-grid"><div><strong>🧭 Solo</strong><small>Explore à ton rythme.</small></div><div><strong>🤝 En équipe</strong><small>Défie les autres explorateurs.</small></div></div>', unsafe_allow_html=True)
-        collective = st.radio('Mode de jeu', ['Individuel', 'Collectif'], horizontal=True) == 'Collectif'
+        st.markdown('<div class="terra-section-title">Choisis ton mode de jeu</div>', unsafe_allow_html=True)
+        collective = st.radio('Mode de jeu', ['Individuel', 'Collectif'], horizontal=True,
+                              captions=['Explore à ton rythme.', 'Défie les autres explorateurs.'],
+                              label_visibility='collapsed') == 'Collectif'
         with st.expander('Comment jouer ?'):
-            st.markdown('**1.** Observe les photos.  **2.** Choisis tes indices.  **3.** Superpose les calques.  **4.** Sélectionne un territoire.  **5.** Valide et découvre la correction.')
+            st.markdown('1. **Observer** les quatre photos.\n2. **Récolter** les indices.\n3. **Superposer** les calques.\n4. **Interpréter** et sélectionner un territoire.\n5. **Restituer** en validant ta réponse.')
             st.caption('100 points par bonne réponse. Pas de bonus de vitesse.')
 if collective:
     store, shared, token = party_screen(records, dataset_id, clear_round)
@@ -105,16 +107,17 @@ if collective:
     if answered and shared['own']:
         st.session_state['terra_zone'] = shared['own']['selected']
 elif 'terra_game' not in st.session_state:
-    st.subheader('Nouvelle partie')
-    demo = os.environ.get('TERRA_PUBLIC') != '1' and os.environ.get('TERRA_ALLOW_DEMO') == '1' and st.checkbox('Mode démonstration privée : images fournies, droits et identité originale non confirmés')
-    available = eligible_rounds(records, demo)
-    if not available:
-        st.info('Aucune manche de diffusion validée : quatre images distinctes, identité et droits vérifiés sont requis.')
-        st.stop()
-    n = st.selectbox('Nombre de manches', list(range(1, len(available) + 1)), index=len(available)-1)
-    if st.button('Commencer la partie', type='primary'):
-        st.session_state['terra_game'] = new_game(available, n)
-        st.rerun()
+    with st.container(key='terra_start', border=True):
+        st.subheader('Nouvelle partie')
+        demo = os.environ.get('TERRA_PUBLIC') != '1' and os.environ.get('TERRA_ALLOW_DEMO') == '1' and st.checkbox('Mode démonstration privée : images fournies, droits et identité originale non confirmés')
+        available = eligible_rounds(records, demo)
+        if not available:
+            st.info('Aucune manche de diffusion validée : quatre images distinctes, identité et droits vérifiés sont requis.')
+            st.stop()
+        n = st.selectbox('Nombre de manches', list(range(1, len(available) + 1)), index=len(available)-1)
+        if st.button('Commencer la partie', type='primary', use_container_width=True):
+            st.session_state['terra_game'] = new_game(available, n)
+            st.rerun()
     st.stop()
 
 if not collective:
